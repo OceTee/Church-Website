@@ -1,4 +1,6 @@
 import { Globe, Send, MessageCircle, Camera, Music2 } from 'lucide-react';
+import { Link } from "react-router-dom";
+
 
 export default function Footer() {
     return(
@@ -17,16 +19,16 @@ export default function Footer() {
                             <h1 className='font-bold'>Explore</h1>
                             <ul className='flex flex-col gap-3'>
                                 <li>Events Calender</li>
-                                <li>Sermons</li>
-                                <li>Gallery</li>
-                                <li>Stream</li>
+                                <Link to="/sermons" className="hover:text-white transition duration-150 active:font-bold">Sermons</Link>
+                                <Link to="/gallery" className="hover:text-white transition duration-150 active:font-bold">Gallery</Link>
+                                <Link to="/stream" className="hover:text-white transition duration-150 active:font-bold">Stream</Link>
                             </ul>
                         </div>
                         <div className='flex flex-col gap-3'>
                             <h1 className='font-bold'>Connect</h1>
                             <ul className='flex flex-col gap-3'>
-                                <li>About</li>
-                                <li>Give</li>
+                                <Link to="/about" className="hover:text-white transition duration-150 active:font-bold">About</Link>
+                                <Link to="/give" className="hover:text-white transition duration-150 active:font-bold">Give</Link>
                                 <li>Get Connected</li>
                             </ul>
                         </div>
@@ -43,3 +45,12 @@ export default function Footer() {
         </div>
     );
 };
+
+
+
+{/* <Link to="/" className="hover:scale-105 transition duration-150 active:font-bold">Home</Link> 
+    <Link to="/sermons" className="hover:scale-105 transition duration-150 active:font-bold">Sermons</Link>
+    <Link to="/gallery" className="hover:scale-105 transition duration-150 active:font-bold">Gallery</Link>
+    <Link to="/stream" className="hover:scale-105 transition duration-150 active:font-bold">Stream</Link>
+    <Link to="/about" className="hover:text-white transition duration-150 active:font-bold">About</Link>
+    <Link to="/give" className="hover:text-white transition duration-150 active:font-bold">Give</Link> */}

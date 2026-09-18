@@ -6,7 +6,6 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Sermons from "./pages/Sermons";
 import About from "./pages/About";
 import Gallery from "./pages/Gallery";
-import Give from "./pages/Give";
 import Test from "./pages/Test";
 
 function App() {
@@ -20,7 +19,6 @@ function App() {
           <Route path="/sermons" element={<Sermons />} />
           <Route path="/about" element={<About />} />
           <Route path="/gallery" element={<Gallery />} />
-          <Route path="/give" element={<Give />} />
           <Route path="/compTest" element={<Test />} />
         </Routes>
         <Footer />
