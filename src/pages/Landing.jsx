@@ -68,7 +68,7 @@ export default function Landing() {
                     {/* Upcoming Events Section */}
                     <div className="flex flex-row justify-between items-center mt-5">
                         <h1 className="text-3xl md:text-4xl font-playfair font-bold text-[#330040]">Upcoming Events</h1>
-                        <Link to="/about" className="text-sm md:text-md font-inter text-[#65007f]">Full calendar</Link>
+                        <Link to="/MiniSermon" className="text-sm md:text-md font-inter text-[#65007f]">Full calendar</Link>
                     </div>
                     
                     <div className="flex flex-col gap-4 mb-20">
