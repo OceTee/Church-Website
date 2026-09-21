@@ -1,66 +1,99 @@
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { useState } from "react";
-import GiveOverlay from "./GiveOverlay";
 import { Menu, X } from "lucide-react";
+import { useGive } from "../context/giveContext";
+
+const NAV_LINKS = [
+  { to: "/", label: "Home" },
+  { to: "/about", label: "About" },
+  { to: "/events", label: "Events" },
+  { to: "/stream", label: "Stream" },
+  { to: "/gallery", label: "Gallery" },
+  { to: "/sermons", label: "Sermons" },
+];
+
+const desktopLinkClass = ({ isActive }) =>
+  `transition duration-150 hover:text-[#ffd700] ${
+    isActive ? "text-[#ffd700] font-semibold" : "text-white"
+  }`;
 
 export default function Navbar() {
-    const [giveOpen, setGiveOpen] = useState(false);
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { open: openGive } = useGive();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-    const toggleMenu = () => setMobileMenuOpen(!mobileMenuOpen);
-    const closeMenu = () => setMobileMenuOpen(false);
+  const toggleMenu = () => setMobileMenuOpen((open) => !open);
+  const closeMenu = () => setMobileMenuOpen(false);
 
-    return(
-        <>
-            <nav className="flex flex-row bg-[#9550a7] top-0 z-40 fixed w-full h-fit px-6 md:px-20 justify-between items-center shadow-md">
-                <div id="logo" className="flex flex-row items-center py-2">
-                    <Link to="/" onClick={closeMenu}>
-                        <img src="logo.png" alt="logo" className="h-16 md:h-20 object-contain"/>
-                    </Link>
-                </div>
+  return (
+    <>
+      <nav className="fixed top-0 z-40 flex w-full items-center justify-between bg-[#9550a7] px-4 shadow-md sm:px-6 md:px-20">
+        <Link to="/" onClick={closeMenu} className="flex items-center py-2">
+          <img
+            src="/logo.png"
+            alt="CAC Possibility Assembly logo"
+            className="h-16 object-contain md:h-20"
+          />
+        </Link>
 
-                {/* Desktop Menu */}
-                <ul className="hidden md:flex flex-row gap-6 items-center text-white font-inter text-[var(--text-gr-base)]">
-                    <Link to="/" className="hover:scale-105 transition duration-150 active:font-bold">Home</Link> 
-                    <Link to="/about" className="hover:scale-105 transition duration-150 active:font-bold">About</Link>
-                    <Link to="/stream" className="hover:scale-105 transition duration-150 active:font-bold">Stream</Link>
-                    <Link to="/gallery" className="hover:scale-105 transition duration-150 active:font-bold">Gallery</Link>
-                    <Link to="/sermons" className="hover:scale-105 transition duration-150 active:font-bold">Sermons</Link>
-                    <button
-                        onClick={() => setGiveOpen(true)}
-                        className="bg-[#ffd700] text-black px-4 py-2 rounded-2xl hover:scale-105 transition duration-150 active:font-bold cursor-pointer shadow-sm"
-                    >
-                        Give
-                    </button>
-                </ul>
+        <ul className="hidden items-center gap-6 font-inter text-[var(--text-gr-base)] md:flex">
+          {NAV_LINKS.map(({ to, label }) => (
+            <li key={to}>
+              <NavLink to={to} end={to === "/"} className={desktopLinkClass}>
+                {label}
+              </NavLink>
+            </li>
+          ))}
+          <li>
+            <button
+              type="button"
+              onClick={openGive}
+              className="cursor-pointer rounded-2xl bg-[#ffd700] px-4 py-2 text-black shadow-sm transition duration-150 hover:scale-105 active:font-bold"
+            >
+              Give
+            </button>
+          </li>
+        </ul>
 
-                {/* Mobile Menu Toggle Button */}
-                <button 
-                    className="md:hidden text-white focus:outline-none"
-                    onClick={toggleMenu}
-                >
-                    {mobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
-                </button>
-            </nav>
+        <button
+          type="button"
+          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+          aria-expanded={mobileMenuOpen}
+          className="text-white focus:outline-none md:hidden"
+          onClick={toggleMenu}
+        >
+          {mobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+        </button>
+      </nav>
 
-            {/* Mobile Dropdown Menu */}
-            {mobileMenuOpen && (
-                <div className="fixed top-[80px] left-0 w-full bg-[#9550a7] z-30 shadow-lg md:hidden flex flex-col font-inter text-[var(--text-gr-base)] text-white">
-                    <Link to="/" onClick={closeMenu} className="px-6 py-4 border-b border-white/20 hover:bg-[#804090] transition">Home</Link>
-                    <Link to="/about" onClick={closeMenu} className="px-6 py-4 border-b border-white/20 hover:bg-[#804090] transition">About</Link>
-                    <Link to="/stream" onClick={closeMenu} className="px-6 py-4 border-b border-white/20 hover:bg-[#804090] transition">Stream</Link>
-                    <Link to="/gallery" onClick={closeMenu} className="px-6 py-4 border-b border-white/20 hover:bg-[#804090] transition">Gallery</Link>
-                    <Link to="/sermons" onClick={closeMenu} className="px-6 py-4 border-b border-white/20 hover:bg-[#804090] transition">Sermons</Link>
-                    <button
-                        onClick={() => { setGiveOpen(true); closeMenu(); }}
-                        className="px-6 py-4 text-left text-[#ffd700] font-bold hover:bg-[#804090] transition"
-                    >
-                        Give
-                    </button>
-                </div>
-            )}
-
-            <GiveOverlay isOpen={giveOpen} onClose={() => setGiveOpen(false)} />
-        </>
-    );
+      {mobileMenuOpen && (
+        <div className="fixed left-0 top-[80px] z-30 flex w-full flex-col bg-[#9550a7] font-inter text-[var(--text-gr-base)] shadow-lg md:hidden">
+          {NAV_LINKS.map(({ to, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={to === "/"}
+              onClick={closeMenu}
+              className={({ isActive }) =>
+                `border-b border-white/20 px-6 py-4 transition hover:bg-[#804090] ${
+                  isActive ? "font-semibold text-[#ffd700]" : "text-white"
+                }`
+              }
+            >
+              {label}
+            </NavLink>
+          ))}
+          <button
+            type="button"
+            onClick={() => {
+              openGive();
+              closeMenu();
+            }}
+            className="px-6 py-4 text-left font-bold text-[#ffd700] transition hover:bg-[#804090]"
+          >
+            Give
+          </button>
+        </div>
+      )}
+    </>
+  );
 }

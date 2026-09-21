@@ -1,58 +1,82 @@
 import Header from "../components/Header";
 
+const LEADERS = [
+  { name: "Pastor [Name]", role: "Lead Pastor" },
+  { name: "[Name]", role: "Associate Pastor" },
+  { name: "[Name]", role: "Worship Leader" },
+];
+
 export default function About() {
-    return(
-        <div className="flex flex-col min-h-dvh pt-32 items-center">
-            <div className="w-[90%] md:w-[75%] flex flex-col gap-12 mb-20">
-                <Header main="About Us" sub="Discover who we are, what we believe, and where we're going together as a church family."/>
-                
-                <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 md:p-12">
-                    <h2 className="text-[var(--text-gr-xl)] font-playfair font-bold text-[#330040] mb-6">Our Story</h2>
-                    <p className="text-[var(--text-gr-md)] text-gray-600 leading-relaxed font-inter">
-                        [Placeholder text: Briefly describe the history of the church here. Talk about when it was founded, who founded it, and the journey so far. This is a great place to highlight your church's legacy and ongoing growth.]
-                    </p>
-                </section>
+  return (
+    <div className="flex min-h-dvh flex-col items-center px-6 pt-32 pb-20">
+      <div className="flex w-full max-w-4xl flex-col gap-10">
+        <Header
+          main="About Us"
+          sub="Discover who we are, what we believe, and where we're going together as a church family."
+        />
 
-                <section className="bg-[#65007f] text-white rounded-2xl shadow-md p-8 md:p-12">
-                    <h2 className="text-[var(--text-gr-xl)] font-playfair font-bold mb-6 text-[#ffd700]">Our Mission & Vision</h2>
-                    <div className="grid md:grid-cols-2 gap-8">
-                        <div>
-                            <h3 className="text-[var(--text-gr-lg)] font-playfair font-semibold mb-4">Mission</h3>
-                            <p className="text-[var(--text-gr-base)] text-gray-200 leading-relaxed font-inter">
-                                [Placeholder text: "To love God, love people, and make disciples." Describe the core mission of your church here.]
-                            </p>
-                        </div>
-                        <div>
-                            <h3 className="text-[var(--text-gr-lg)] font-playfair font-semibold mb-4">Vision</h3>
-                            <p className="text-[var(--text-gr-base)] text-gray-200 leading-relaxed font-inter">
-                                [Placeholder text: "To be a beacon of hope and a center for community transformation." Describe the long-term vision here.]
-                            </p>
-                        </div>
-                    </div>
-                </section>
+        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm sm:p-10">
+          <h2 className="mb-6 font-playfair text-2xl font-bold text-[#330040] md:text-3xl">
+            Our Story
+          </h2>
+          <p className="font-inter text-base leading-relaxed text-gray-600 md:text-lg">
+            [Placeholder text: Briefly describe the history of the church here.
+            Talk about when it was founded, who founded it, and the journey so
+            far. This is a great place to highlight your church's legacy and
+            ongoing growth.]
+          </p>
+        </section>
 
-                <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 md:p-12">
-                    <h2 className="text-[var(--text-gr-xl)] font-playfair font-bold text-[#330040] mb-8">Leadership Team</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-                        {/* Placeholder Team Member */}
-                        <div className="flex flex-col items-center text-center">
-                            <div className="w-32 h-32 bg-gray-200 rounded-full mb-4 shadow-inner flex items-center justify-center text-gray-400">Photo</div>
-                            <h4 className="text-[var(--text-gr-lg)] font-bold text-[#330040]">Pastor [Name]</h4>
-                            <p className="text-[var(--text-gr-base)] text-[#65007f]">Lead Pastor</p>
-                        </div>
-                        <div className="flex flex-col items-center text-center">
-                            <div className="w-32 h-32 bg-gray-200 rounded-full mb-4 shadow-inner flex items-center justify-center text-gray-400">Photo</div>
-                            <h4 className="text-[var(--text-gr-lg)] font-bold text-[#330040]">[Name]</h4>
-                            <p className="text-[var(--text-gr-base)] text-[#65007f]">Associate Pastor</p>
-                        </div>
-                        <div className="flex flex-col items-center text-center">
-                            <div className="w-32 h-32 bg-gray-200 rounded-full mb-4 shadow-inner flex items-center justify-center text-gray-400">Photo</div>
-                            <h4 className="text-[var(--text-gr-lg)] font-bold text-[#330040]">[Name]</h4>
-                            <p className="text-[var(--text-gr-base)] text-[#65007f]">Worship Leader</p>
-                        </div>
-                    </div>
-                </section>
+        <section className="rounded-2xl bg-[#65007f] p-6 text-white shadow-md sm:p-10">
+          <h2 className="mb-6 font-playfair text-2xl font-bold text-[#ffd700] md:text-3xl">
+            Our Mission & Vision
+          </h2>
+          <div className="grid gap-8 md:grid-cols-2">
+            <div>
+              <h3 className="mb-4 font-playfair text-xl font-semibold md:text-2xl">
+                Mission
+              </h3>
+              <p className="font-inter text-base leading-relaxed text-gray-200">
+                [Placeholder text: "To love God, love people, and make
+                disciples." Describe the core mission of your church here.]
+              </p>
             </div>
-        </div>
-    );
+            <div>
+              <h3 className="mb-4 font-playfair text-xl font-semibold md:text-2xl">
+                Vision
+              </h3>
+              <p className="font-inter text-base leading-relaxed text-gray-200">
+                [Placeholder text: "To be a beacon of hope and a center for
+                community transformation." Describe the long-term vision here.]
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm sm:p-10">
+          <h2 className="mb-8 font-playfair text-2xl font-bold text-[#330040] md:text-3xl">
+            Leadership Team
+          </h2>
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3">
+            {LEADERS.map((leader) => (
+              <div
+                key={leader.role}
+                className="flex flex-col items-center text-center"
+              >
+                <div className="mb-4 flex h-32 w-32 items-center justify-center rounded-full bg-gray-200 font-inter text-sm text-gray-400 shadow-inner">
+                  Photo
+                </div>
+                <h3 className="font-playfair text-xl font-bold text-[#330040]">
+                  {leader.name}
+                </h3>
+                <p className="font-inter text-base text-[#65007f]">
+                  {leader.role}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    </div>
+  );
 }

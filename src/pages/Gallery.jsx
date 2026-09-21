@@ -1,44 +1,67 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Header from "../components/Header";
-
-const API_URL = 'http://localhost:5000/api';
+import { apiFetch, assetUrl } from "../lib/api";
 
 export default function Gallery() {
-    const [photos, setPhotos] = useState([]);
+  const [photos, setPhotos] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchPhotos = async () => {
-            try {
-                const res = await fetch(`${API_URL}/gallery`);
-                const data = await res.json();
-                setPhotos(data);
-            } catch (error) {
-                console.error("Failed to fetch gallery:", error);
-            }
-        };
-        fetchPhotos();
-    }, []);
+  useEffect(() => {
+    let active = true;
 
-    return(
-        <div className="flex flex-col min-h-dvh pt-32 items-center">
-            <div className="w-[90%] md:w-[75%] flex flex-col mb-20">
-                <Header main={"Gallery"} sub={"Moments from our services, events, and life together as a church family."}/>
-                
-                {photos.length === 0 ? (
-                    <div className="text-center text-gray-500 my-20">No photos added yet. Check back soon!</div>
-                ) : (
-                    <div className="w-full h-fit grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-8">
-                        {photos.map(photo => (
-                            <div key={photo.id} className="relative group overflow-hidden rounded-xl shadow-md aspect-square">
-                                <img src={`http://localhost:5000${photo.imageUrl}`} alt={photo.date} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
-                                    <span className="text-white text-sm font-inter">{photo.date}</span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
+    const loadPhotos = async () => {
+      try {
+        const response = await apiFetch("/gallery");
+        const data = await response.json();
+        if (active) setPhotos(data);
+      } catch (error) {
+        console.error("Failed to fetch gallery:", error);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    loadPhotos();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return (
+    <div className="flex min-h-dvh flex-col items-center px-6 pt-32 pb-20">
+      <div className="flex w-full max-w-5xl flex-col gap-8">
+        <Header
+          main="Gallery"
+          sub="Moments from our services, events, and life together as a church family."
+        />
+
+        {loading ? (
+          <p className="font-inter text-gray-500">Loading gallery...</p>
+        ) : photos.length === 0 ? (
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 py-20 text-center font-inter italic text-gray-500">
+            No photos added yet. Check back soon!
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+            {photos.map((photo) => (
+              <figure
+                key={photo.id}
+                className="group relative aspect-square overflow-hidden rounded-xl shadow-md"
+              >
+                <img
+                  src={assetUrl(photo.imageUrl)}
+                  alt={photo.date}
+                  loading="lazy"
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <figcaption className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 via-transparent to-transparent p-4 font-inter text-sm text-white opacity-0 transition-opacity group-hover:opacity-100">
+                  {photo.date}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

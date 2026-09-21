@@ -1,48 +1,61 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Header from "../components/Header";
 import MiniSermon from "../components/MiniSermon";
-
-const API_URL = 'http://localhost:5000/api';
+import { apiFetch } from "../lib/api";
 
 export default function Sermons() {
-    const [sermons, setSermons] = useState([]);
+  const [sermons, setSermons] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchSermons = async () => {
-            try {
-                const res = await fetch(`${API_URL}/sermons`);
-                const data = await res.json();
-                setSermons(data);
-            } catch (error) {
-                console.error("Failed to fetch sermons:", error);
-            }
-        };
-        fetchSermons();
-    }, []);
+  useEffect(() => {
+    let active = true;
 
-    return (
-        <div className="flex flex-col min-h-dvh pt-32 items-center">
-            <div className="w-[90%] md:w-[75%] flex flex-col gap-10 mb-20">
-                <Header main="Sermons" sub="Listen and catch-up on past messages."/>
-                
-                {sermons.length === 0 ? (
-                    <div className="text-center text-gray-500 italic py-20 bg-gray-50 rounded-2xl border border-gray-200">
-                        No sermons have been uploaded yet. Check back later!
-                    </div>
-                ) : (
-                    <div className="flex flex-wrap justify-center md:justify-start gap-6">
-                        {sermons.map(sermon => (
-                            <MiniSermon 
-                                key={sermon.id}
-                                type="Audio Message"
-                                title={sermon.title}
-                                date={sermon.date}
-                                audioUrl={sermon.audioUrl}
-                            />
-                        ))}
-                    </div>
-                )}
-            </div>
-        </div>
-    );
+    const loadSermons = async () => {
+      try {
+        const response = await apiFetch("/sermons");
+        const data = await response.json();
+        if (active) setSermons(data);
+      } catch (error) {
+        console.error("Failed to fetch sermons:", error);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    loadSermons();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return (
+    <div className="flex min-h-dvh flex-col items-center px-6 pt-32 pb-20">
+      <div className="flex w-full max-w-5xl flex-col gap-8">
+        <Header
+          main="Sermons"
+          sub="Listen and catch up on past messages from our services."
+        />
+
+        {loading ? (
+          <p className="font-inter text-gray-500">Loading sermons...</p>
+        ) : sermons.length === 0 ? (
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 py-20 text-center font-inter italic text-gray-500">
+            No sermons have been uploaded yet. Check back later!
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {sermons.map((sermon) => (
+              <MiniSermon
+                key={sermon.id}
+                type="Audio Message"
+                title={sermon.title}
+                date={sermon.date}
+                audioUrl={sermon.audioUrl}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

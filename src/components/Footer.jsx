@@ -1,56 +1,86 @@
-import { Globe, Send, MessageCircle, Camera, Music2 } from 'lucide-react';
 import { Link } from "react-router-dom";
+import { useGive } from "../context/giveContext";
+import SocialLinks from "./SocialLinks";
+import { site } from "../config/site";
 
+const linkClass = "transition duration-150 hover:text-white";
 
 export default function Footer() {
-    return(
-        <div className="bg-[#330040] p-6 md:p-10 flex justify-center font-inter text-gray-400">
-            <div className="w-full md:w-[85%] lg:w-[75%]">
-                <div className='grid grid-col-1 items-center divide-y divide-gray-400 divide-opacity-50'>
-                    <div className="flex flex-wrap gap-4 md:gap-6 py-8 justify-center md:justify-start">
-                        <h1 className='flex items-center flex-row gap-2'><Globe size={18}/>CAC Possibility</h1>
-                        <h1 className='flex items-center flex-row gap-2'><Send size={18}/>CAC Possibility</h1>
-                        <h1 className='flex items-center flex-row gap-2'><MessageCircle size={18}/>CAC Possibility</h1>
-                        <h1 className='flex items-center flex-row gap-2'><Camera size={18}/>CAC Possibility</h1>
-                        <h1 className='flex items-center flex-row gap-2'><Music2 size={18}/>CAC Possibility</h1>
-                    </div>
-                    <div className="flex flex-col md:flex-row font-inter w-full justify-between py-8 gap-8 md:gap-0 text-center md:text-left">
-                        <div className='flex flex-col gap-3'>
-                            <h1 className='font-bold text-white text-lg'>Explore</h1>
-                            <ul className='flex flex-col gap-3'>
-                                <li>Events Calendar</li>
-                                <Link to="/sermons" className="hover:text-white transition duration-150">Sermons</Link>
-                                <Link to="/gallery" className="hover:text-white transition duration-150">Gallery</Link>
-                                <Link to="/stream" className="hover:text-white transition duration-150">Stream</Link>
-                            </ul>
-                        </div>
-                        <div className='flex flex-col gap-3'>
-                            <h1 className='font-bold text-white text-lg'>Connect</h1>
-                            <ul className='flex flex-col gap-3'>
-                                <Link to="/about" className="hover:text-white transition duration-150">About</Link>
-                                <button className="hover:text-white transition duration-150 text-left md:text-left mx-auto md:mx-0">Give</button>
-                                <li>Get Connected</li>
-                            </ul>
-                        </div>
-                        <div className='flex flex-col gap-3 max-w-xs mx-auto md:mx-0'>
-                            <h1 className='font-bold text-white text-lg'>Visit Us</h1>
-                            <p className='leading-relaxed'>3 Fatokun Street, Oremeta, <br /> Aba Apanu, Ologuneru Road, Ibadan.</p>
-                        </div>
-                    </div>
-                </div>
-                <p className="text-center md:text-left text-gray-400 text-sm opacity-60 mt-4">
-                    &copy; {new Date().getFullYear()} CAC Possibility Assembly Nation. All rights reserved.
-                </p>
-            </div>
+  const { open: openGive } = useGive();
+
+  return (
+    <footer className="mt-auto bg-[#330040] px-6 py-10 font-inter text-gray-400 md:px-10">
+      <div className="mx-auto w-full max-w-5xl">
+        <SocialLinks className="justify-center border-b border-white/10 pb-8 md:justify-start" />
+
+        <div className="grid grid-cols-2 gap-8 py-8 md:grid-cols-4">
+          <nav className="flex flex-col gap-3">
+            <h2 className="text-lg font-bold text-white">Explore</h2>
+            <ul className="flex flex-col gap-3">
+              <li>
+                <Link to="/events" className={linkClass}>
+                  Events Calendar
+                </Link>
+              </li>
+              <li>
+                <Link to="/sermons" className={linkClass}>
+                  Sermons
+                </Link>
+              </li>
+              <li>
+                <Link to="/gallery" className={linkClass}>
+                  Gallery
+                </Link>
+              </li>
+              <li>
+                <Link to="/stream" className={linkClass}>
+                  Stream
+                </Link>
+              </li>
+            </ul>
+          </nav>
+
+          <nav className="flex flex-col gap-3">
+            <h2 className="text-lg font-bold text-white">Connect</h2>
+            <ul className="flex flex-col gap-3">
+              <li>
+                <Link to="/about" className={linkClass}>
+                  About
+                </Link>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={openGive}
+                  className={`${linkClass} text-left`}
+                >
+                  Give
+                </button>
+              </li>
+              <li>
+                <Link to="/connect" className={linkClass}>
+                  Get Connected
+                </Link>
+              </li>
+            </ul>
+          </nav>
+
+          <div className="col-span-2 flex flex-col gap-3 md:col-span-2">
+            <h2 className="text-lg font-bold text-white">Visit Us</h2>
+            <address className="not-italic leading-relaxed">
+              {site.address.street}
+              <br />
+              {site.address.area}
+              <br />
+              {site.address.city}
+            </address>
+          </div>
         </div>
-    );
+
+        <p className="border-t border-white/10 pt-6 text-xs text-gray-400">
+          &copy; {new Date().getFullYear()} {site.name}. All rights reserved.
+        </p>
+      </div>
+    </footer>
+  );
 }
-
-
-
-{/* <Link to="/" className="hover:scale-105 transition duration-150 active:font-bold">Home</Link> 
-    <Link to="/sermons" className="hover:scale-105 transition duration-150 active:font-bold">Sermons</Link>
-    <Link to="/gallery" className="hover:scale-105 transition duration-150 active:font-bold">Gallery</Link>
-    <Link to="/stream" className="hover:scale-105 transition duration-150 active:font-bold">Stream</Link>
-    <Link to="/about" className="hover:text-white transition duration-150 active:font-bold">About</Link>
-    <Link to="/give" className="hover:text-white transition duration-150 active:font-bold">Give</Link> */}

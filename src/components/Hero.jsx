@@ -1,27 +1,45 @@
 import { Radio, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { site } from "../config/site";
 
 export default function Hero() {
-    return(
-        <div className="flex justify-center h-fit w-full bg-[url('/BG.svg')] bg-cover bg-center bg-no-repeat pt-32 md:pt-52 pb-20 md:pb-48 px-6 md:px-20">
-            <div className="w-full md:w-[85%] lg:w-[75%] h-fit flex flex-col md:flex-row items-center md:items-start gap-10 md:gap-0">
-                <div className="flex-1 text-center md:text-left">
-                    <h1 className="text-[var(--text-gr-xl)] md:text-[var(--text-gr-2xl)] font-playfair text-[#330040] font-bold mb-5 leading-tight">Welcome to CAC Possibility Assembly Nation</h1>
-                    <p className="text-[var(--text-gr-md)] font-inter text-gray-700">We are excited to welcome you home as part of our church family!</p>
+  return (
+    <section className="flex w-full justify-center bg-[url('/BG.svg')] bg-cover bg-center bg-no-repeat px-6 pb-16 pt-32 md:pb-40 md:pt-52">
+      <div className="flex w-full max-w-5xl flex-col items-center gap-10 md:flex-row md:gap-12">
+        <div className="flex-1 text-center md:text-left">
+          <h1 className="mb-5 font-playfair text-3xl font-bold leading-tight text-[#330040] sm:text-4xl md:text-5xl">
+            Welcome to {site.name}
+          </h1>
+          <p className="font-inter text-lg text-gray-700 md:text-xl">
+            {site.tagline}
+          </p>
 
-                    <div className="mt-9 font-inter text-[var(--text-gr-base)] flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-                        <Link to="/stream" className="bg-[#ffd700] text-black px-6 py-3 rounded-full flex gap-2 items-center justify-center hover:scale-105 duration-100 shadow-md">
-                            <Radio />Watch us Live
-                        </Link>
-                        <a href="about" className="border-2 border-[#65007f] text-[#65007f] px-6 py-3 rounded-full flex gap-2 items-center justify-center hover:scale-105 duration-100">
-                            Learn more<ArrowRight />
-                        </a>
-                    </div>
-                </div>
-                <div className="w-full md:w-[40%] flex justify-center">
-                    <img src="/Church.jpg" alt="church picture" className="rounded-xl object-cover shadow-xl w-full max-w-[400px]"/>
-                </div>
-            </div>
+          <div className="mt-9 flex flex-col justify-center gap-4 font-inter sm:flex-row md:justify-start">
+            <Link
+              to="/stream"
+              className="flex items-center justify-center gap-2 rounded-full bg-[#ffd700] px-6 py-3 text-black shadow-md transition duration-100 hover:scale-105"
+            >
+              <Radio size={20} />
+              Watch Live
+            </Link>
+            <Link
+              to="/about"
+              className="flex items-center justify-center gap-2 rounded-full border-2 border-[#65007f] px-6 py-3 text-[#65007f] transition duration-100 hover:scale-105"
+            >
+              Learn more
+              <ArrowRight size={20} />
+            </Link>
+          </div>
         </div>
-    );
+
+        <div className="flex w-full justify-center md:w-[40%]">
+          <img
+            src="/Church.jpg"
+            alt="CAC Possibility Assembly congregation"
+            className="w-full max-w-[400px] rounded-xl object-cover shadow-xl"
+          />
+        </div>
+      </div>
+    </section>
+  );
 }
