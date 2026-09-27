@@ -1,9 +1,9 @@
 import "./env.js";
 import crypto from "crypto";
 import { query, run } from "./db.js";
+import { hashPassword, verifyHashedPassword, passwordWarning, DEFAULT_PASSWORD } from "./passwords.js";
 
 const DEFAULT_SECRET = "cac-possibility-dev-secret-change-me";
-const DEFAULT_PASSWORD = "admin123";
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
 
 // A missing AUTH_SECRET must never take the whole site down: the public pages,
@@ -20,7 +20,6 @@ const SECRET =
         : DEFAULT_SECRET);
 
 const TOKEN_TTL_MS = 1000 * 60 * 60 * 12; // 12 hours
-const MIN_PASSWORD_LENGTH = 8;
 
 if (USING_GENERATED_SECRET) {
     console.warn(
@@ -32,59 +31,8 @@ if (USING_GENERATED_SECRET) {
     );
 }
 
-// --- Password hashing -------------------------------------------------------
-// scrypt with a per-password random salt. The plaintext is never stored, so a
-// leaked database does not hand over the admin password.
-
-const SCRYPT_KEY_LENGTH = 64;
-const SCRYPT_OPTIONS = { N: 16384, r: 8, p: 1, maxmem: 64 * 1024 * 1024 };
-
-function deriveKey(password, salt) {
-    return new Promise((resolve, reject) => {
-        crypto.scrypt(
-            Buffer.from(password, "utf8"),
-            salt,
-            SCRYPT_KEY_LENGTH,
-            SCRYPT_OPTIONS,
-            (err, derived) => (err ? reject(err) : resolve(derived))
-        );
-    });
-}
-
-/**
- * Returns a warning string for a weak password, or null when it is fine.
- * Never blocks: a weak password is a security problem, not a reason to take
- * the entire site offline. `admin123` is called out loudly because it is
- * published in this repository.
- */
-export function passwordWarning(password) {
-    if (typeof password !== "string" || password.length === 0) {
-        return "Password is empty.";
-    }
-    if (password === DEFAULT_PASSWORD) {
-        return `The password "${DEFAULT_PASSWORD}" is the development default and is public in the source code. Change it from the admin panel.`;
-    }
-    if (password.length < MIN_PASSWORD_LENGTH) {
-        return `Password is only ${password.length} characters; ${MIN_PASSWORD_LENGTH}+ is recommended.`;
-    }
-    return null;
-}
-
-async function hashPassword(password) {
-    const salt = crypto.randomBytes(16);
-    const derived = await deriveKey(password, salt);
-    return { hash: derived.toString("hex"), salt: salt.toString("hex") };
-}
-
-async function verifyHashedPassword(password, hash, salt) {
-    if (typeof password !== "string" || password.length === 0) return false;
-
-    const derived = await deriveKey(password, Buffer.from(salt, "hex"));
-    const expected = Buffer.from(hash, "hex");
-
-    if (expected.length !== derived.length) return false;
-    return crypto.timingSafeEqual(expected, derived);
-}
+// Hashing primitives live in ./passwords.js so that CLI maintenance scripts
+// can reuse them without importing the request-handling logic below.
 
 // --- Admin account ---------------------------------------------------------
 // There is a single admin identity, so no username is involved.

@@ -166,6 +166,31 @@ if you want them to match, or point local development at the Turso database by
 setting `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in `.env` (but then local
 uploads write to the production Blob store, so prefer keeping them separate).
 
+### Recovering from a lost password
+
+If you cannot sign in and cannot remember the password, set it directly in the
+database. This deliberately bypasses the "only seed when empty" rule, so it
+works whether or not an admin account already exists:
+
+```bash
+# Locally (server/database.sqlite)
+npm run db:set-password -- "your-new-password"
+
+# Against the production database — needs the Turso credentials in .env
+TURSO_DATABASE_URL=libsql://… TURSO_AUTH_TOKEN=… \
+  npm run db:set-password -- "your-new-password"
+```
+
+Run it with no argument to be prompted, and to be asked for confirmation. It
+prints which database it is about to change and refuses to run without a
+password. Weak passwords are accepted with a warning, never silently.
+
+Afterwards the database is the source of truth and the `ADMIN_PASSWORD` env var
+is no longer consulted. Bumping `passwordVersion` signs out every existing
+session.
+
+There is deliberately **no HTTP route** that can call this script.
+
 ### Diagnosing a deployment
 
 `GET /api/health` reports configuration state as booleans and messages — never
