@@ -58,14 +58,17 @@ export async function login(password) {
 
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.includes("application/json")) {
+    // A crashed serverless function answers with an HTML error page. Report the
+    // status so the cause is identifiable from the login screen alone.
     throw new Error(
-      "The server did not return a valid API response. The API function may not be deployed — check the Vercel Functions section."
+      `Server error (HTTP ${response.status}). The API did not respond correctly — ` +
+        "check /api/health for the configuration problem."
     );
   }
 
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new Error(data.error || "Unable to sign in");
+    throw new Error(data.error || `Unable to sign in (HTTP ${response.status})`);
   }
 
   const data = await response.json();
