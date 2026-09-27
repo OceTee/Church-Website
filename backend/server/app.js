@@ -33,6 +33,7 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.join(__dirname, "..");
+const IS_PRODUCTION_LIKE = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL);
 
 const app = express();
 
@@ -42,11 +43,40 @@ let startupError = null;
 
 app.disable("x-powered-by");
 
-// On Vercel the API and the SPA share an origin, so CORS is not needed. It is
-// only enabled when an explicit origin is configured (e.g. a split dev setup).
-const allowedOrigin = process.env.ALLOWED_ORIGIN;
-if (allowedOrigin) {
-    app.use(cors({ origin: allowedOrigin }));
+// The frontend is a separate app on a different origin, so CORS is required.
+// ALLOWED_ORIGIN accepts a comma-separated list of exact origins. Bearer
+// tokens are sent in the Authorization header rather than as cookies, so
+// `credentials` is deliberately not enabled and no wildcard is used.
+const allowedOrigins = (process.env.ALLOWED_ORIGIN || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+if (allowedOrigins.length > 0) {
+    app.use(
+        cors({
+            origin(origin, callback) {
+                // Same-origin and non-browser callers send no Origin header.
+                if (!origin || allowedOrigins.includes(origin)) {
+                    return callback(null, true);
+                }
+                // Log it, but do not error: omitting the header is the standard
+                // way to reject a cross-origin request, and the browser blocks
+                // it. Throwing here would turn every stray call into a 500.
+                console.warn(`[cors] blocked cross-origin request from ${origin}`);
+                return callback(null, false);
+            },
+            methods: ["GET", "POST", "DELETE", "OPTIONS"],
+            allowedHeaders: ["Content-Type", "Authorization"],
+            maxAge: 86400,
+        })
+    );
+} else if (IS_PRODUCTION_LIKE) {
+    console.warn(
+        "[cors] ALLOWED_ORIGIN is not set. The frontend is served from a different " +
+            "origin, so the browser will block its API calls. Set ALLOWED_ORIGIN to " +
+            "the frontend's URL."
+    );
 }
 
 app.use(express.json({ limit: "1mb" }));

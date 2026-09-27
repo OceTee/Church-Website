@@ -5,9 +5,17 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist', '.kilo']),
+  globalIgnores([
+    'dist',
+    'node_modules',
+    '.vercel',
+    '.kilo',
+    'frontend/dist',
+    'backend/.vercel',
+    'frontend/.vercel',
+  ]),
   {
-    files: ['**/*.{js,jsx}'],
+    files: ['frontend/src/**/*.{js,jsx}'],
     extends: [
       js.configs.recommended,
       reactHooks.configs.flat.recommended,
@@ -23,12 +31,10 @@ export default defineConfig([
     },
   },
   {
-    // Server-side, build and script files run on Node, not in the browser.
+    // Server, build and script files run on Node, not in the browser.
     files: [
-      'server/**/*.js',
-      'api/**/*.js',
-      'scripts/**/*.js',
-      'vite.config.js',
+      'backend/**/*.js',
+      'frontend/vite.config.js',
       'eslint.config.js',
     ],
     languageOptions: {

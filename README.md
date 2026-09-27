@@ -10,7 +10,7 @@ deployed entirely on Vercel (static SPA + serverless function).
 | Concern    | Choice                                                             |
 | ---------- | ------------------------------------------------------------------ |
 | Frontend   | React 19, Vite 8, Tailwind v4, React Router 7                     |
-| API        | Express 5, deployed as a Vercel serverless function (`api/`)       |
+| API        | Express 5, deployed as a Vercel serverless function (`backend/api/`)  |
 | Database   | libSQL — Turso in production, a local SQLite file in development   |
 | Uploads    | Vercel Blob in production, `public/uploads` in development         |
 | Auth       | Single shared admin password, scrypt-hashed, HMAC-signed 12-hour tokens |
@@ -18,7 +18,7 @@ deployed entirely on Vercel (static SPA + serverless function).
 ### Why not just SQLite + local uploads?
 
 Vercel functions have no persistent, writable filesystem. A `database.sqlite`
-file and anything written to `public/uploads` are discarded on the next cold
+file and anything written to `backend/public/uploads` are discarded on the next cold
 start and after every deploy. That is why production uses Turso and Vercel Blob,
 and why the code falls back to the local file/disk drivers when those env vars
 are absent. Local development is therefore unchanged — no accounts needed.
@@ -27,28 +27,94 @@ are absent. Local development is therefore unchanged — no accounts needed.
 
 ## Local development
 
+The repository is a monorepo with two independently deployable apps:
+
+```
+frontend/   React + Vite SPA          -> its own Vercel project
+backend/    Express 5 API + /api/*    -> its own Vercel project
+```
+
+They are separate because a single-project deployment cannot serve both: a
+`"/(.*)" -> "/index.html"` rewrite makes Vercel return the SPA's HTML for every
+`/api/*` request, so the API is unreachable. Splitting them gives the frontend
+a real API and the API a real function.
+
 ```bash
-npm install
-cp .env.example .env     # optional; safe defaults work for local dev
-npm run db:migrate       # creates/updates server/database.sqlite
-npm run dev              # Vite on :5173, API on :5000
+npm run setup           # installs root, backend and frontend dependencies
+npm run dev             # Vite on :5173, API on :5000
 ```
 
 `npm run dev` starts both processes. Vite proxies `/api` and `/uploads` to
 `http://localhost:5000`, so the browser only ever talks to one origin.
 
+Copy `backend/.env.example` to `backend/.env` and `frontend/.env.example` to
+`frontend/.env`. Both have working local defaults, so they are optional.
+
 Other scripts:
 
-| Script                | Purpose                                   |
-| --------------------- | ----------------------------------------- |
-| `npm run build`       | Production frontend build into `dist/`    |
-| `npm run lint`        | ESLint across frontend, server and `api/` |
-| `npm run db:migrate`  | Apply `server/schema.sql` to the database |
-| `npm start`           | Run the API alone (no Vite)               |
+| Script                   | Purpose                                          |
+| ------------------------ | ------------------------------------------------ |
+| `npm run build`          | Production frontend build into `frontend/dist/`  |
+| `npm run lint`           | ESLint across both apps                         |
+| `npm run db:migrate`     | Apply `backend/server/schema.sql` to the database |
+| `npm run db:set-password` | Set or reset the admin password                 |
+| `npm run dev:backend`    | Run the API alone (no Vite)                      |
+| `npm run deploy:backend` | Deploy the backend to Vercel (production)        |
+| `npm run deploy:frontend`| Deploy the frontend to Vercel (production)       |
 
 ---
 
 ## Deploying to Vercel
+
+Two projects, deployed from the two subdirectories. The order matters: deploy
+the backend first so you know its URL for the frontend's `VITE_API_URL`.
+
+```bash
+vercel link --cwd backend    # or: cd backend && vercel link
+vercel --cwd backend --prod
+```
+
+Then set the backend's env vars (Vercel dashboard > backend project >
+Settings > Environment Variables, and redeploy):
+
+| Variable                | Required | Purpose                                        |
+| ----------------------- | -------- | ---------------------------------------------- |
+| `ALLOWED_ORIGIN`        | yes      | Frontend origin, e.g. `https://site.vercel.app`. Comma-separate for several. |
+| `TURSO_DATABASE_URL`    | yes      | Persistent database                            |
+| `TURSO_AUTH_TOKEN`      | yes      | Database credentials                           |
+| `BLOB_READ_WRITE_TOKEN` | yes      | Persistent uploads                             |
+| `AUTH_SECRET`           | yes      | Signs admin session tokens. `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"` |
+| `ADMIN_PASSWORD`        | first run only | Seeds the first admin account. Ignored once the account exists, so a password changed in the panel survives redeploys. |
+| `EMAIL_USER` / `EMAIL_PASS` / `EMAIL_RECEIVER` | for the contact form | `EMAIL_PASS` is a Gmail **App Password**, not the account password. |
+
+Generate `AUTH_SECRET` with:
+`node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`.
+
+Never set `AUTH_DISABLED` on the public backend. The admin routes can delete
+sermons, events and gallery entries, so the bypass is a full content wipe by
+anyone who finds the API. A missing `AUTH_SECRET` still starts the server but
+signs sessions with a per-instance random value, so admins are signed out on
+every cold start. `/api/health` reports these as booleans and never returns a
+secret. See [Admin access](#admin-access).
+
+Deploy the frontend, pointing it at the backend:
+
+```bash
+vercel link --cwd frontend
+vercel env add VITE_API_URL production   # https://<backend>.vercel.app/api
+vercel --cwd frontend --prod
+```
+
+`VITE_API_URL` is inlined at build time, so it must be set before the build
+step runs. A production build with it missing **fails** rather than shipping a
+frontend that calls itself and receives HTML.
+
+Verify the API is really returning JSON, not the SPA:
+
+```bash
+curl -i https://<backend>.vercel.app/api/health
+# Content-Type: application/json
+```
 
 ### 1. Create the database (Turso)
 
@@ -57,55 +123,21 @@ Other scripts:
 
 ### 2. Create blob storage (Vercel Blob)
 
-1. In the Vercel project: **Storage → Create → Blob**.
+1. In the **backend** Vercel project: **Storage → Create → Blob**.
 2. Vercel adds a `BLOB_READ_WRITE_TOKEN` environment variable automatically.
 
 > A **Hobby** plan store works with browser-side uploads. If you enable
 > client uploads and they fail, switch the store to **Pro**.
 
-### 3. Import the repository
+### 3. Create the tables
 
-Push the repository to GitHub, then **Add New → Project** in Vercel and import
-it. `vercel.json` already supplies the build command, output directory and
-rewrite rules, so no build settings need changing.
-
-### 4. Add environment variables
-
-Project **Settings → Environment Variables**, for *all* environments:
-
-| Variable                | Required | Value                                          |
-| ----------------------- | -------- | ---------------------------------------------- |
-| `AUTH_SECRET`           | yes      | `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"` |
-| `ADMIN_PASSWORD`        | first run only | Seeds the first admin account. ≥ 8 characters in production. Ignored once the account exists. |
-| `TURSO_DATABASE_URL`    | yes      | `libsql://…turso.io` from step 1              |
-| `TURSO_AUTH_TOKEN`      | yes      | Auth token from step 1                        |
-| `BLOB_READ_WRITE_TOKEN` | yes      | Added automatically in step 2                 |
-| `EMAIL_USER`            | contact  | Gmail address that sends the message          |
-| `EMAIL_PASS`            | contact  | Gmail **App Password** (not the account password) |
-| `EMAIL_RECEIVER`        | optional | Where form messages should land; defaults to `EMAIL_USER` |
-
-Both `AUTH_SECRET` and `ADMIN_PASSWORD` are optional but strongly recommended. A missing one never stops the server: it is reported by `/api/health`, which never returns a secret value. See [Admin access](#admin-access).
-
-### 5. Create the tables
-
-The API applies `server/schema.sql` on every cold start, so tables are created
-automatically. To initialise explicitly (or to inspect the result), run locally
-with the same env vars set:
+The API applies `backend/server/schema.sql` on every cold start, so tables are
+created automatically. To initialise explicitly (or to inspect the result), run
+locally with the same env vars set:
 
 ```bash
 npm run db:migrate
 ```
-
-### 6. Deploy
-
-Every push to the main branch redeploys. Check **Settings → Environment
-Variables** if the first deploy fails — a missing variable is the usual cause.
-
-### 7. Point the front end at the deployment
-
-`src/lib/urls.js` defaults to same-origin `/api`, which is already correct for
-a single Vercel project. `VITE_API_URL` / `VITE_ASSET_URL` are only needed if
-the API is hosted somewhere else, and must be set at **build** time.
 
 ---
 
@@ -173,7 +205,7 @@ database. This deliberately bypasses the "only seed when empty" rule, so it
 works whether or not an admin account already exists:
 
 ```bash
-# Locally (server/database.sqlite)
+# Locally (backend/server/database.sqlite)
 npm run db:set-password -- "your-new-password"
 
 # Against the production database — needs the Turso credentials in .env
@@ -239,9 +271,13 @@ failed password or a blank error.
 
 ## Notes
 
-- `server/database.sqlite` and `public/uploads/` are gitignored. If they were
-  previously committed, run `git rm --cached server/database.sqlite` so the
-  local database is not shipped to production.
-- `.env.example` contains placeholders only. Never commit a real `.env`.
-- `/api/*` is handled by the serverless function; every other path falls through
-  to `/index.html` so client-side routes survive a hard refresh.
+- `backend/server/database.sqlite` and `backend/public/uploads/` are gitignored.
+  If the database file was previously committed, run
+  `git rm --cached backend/server/database.sqlite` so the local database is not
+  shipped to production.
+- `backend/.env.example` and `frontend/.env.example` contain placeholders only.
+  Never commit a real `.env`.
+- The frontend rewrites `/(.*)` to `/index.html` so client-side routes survive a
+  hard refresh. The backend has **no** rewrite, so its `/api/*` function is
+  always reachable. Keeping that rewrite out of the backend is what makes the
+  split necessary and sufficient.
