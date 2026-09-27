@@ -12,6 +12,20 @@ dist
 dist-ssr
 *.local
 
+# Secrets — never commit real credentials
+.env
+.env.*
+!.env.example
+
+# Vercel
+.vercel
+
+# Local-only data: uploads fall back to disk and the database falls back to a
+# local SQLite file when the Turso/Vercel Blob env vars are absent.
+public/uploads/
+server/database.sqlite
+server/database.sqlite-journal
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

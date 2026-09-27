@@ -1,21 +1,25 @@
+import "./env.js";
 import crypto from "crypto";
 
 const DEFAULT_SECRET = "cac-possibility-dev-secret-change-me";
 const DEFAULT_PASSWORD = "admin123";
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
 
 const SECRET = process.env.AUTH_SECRET || DEFAULT_SECRET;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || DEFAULT_PASSWORD;
 const TOKEN_TTL_MS = 1000 * 60 * 60 * 12; // 12 hours
 
-if (SECRET === DEFAULT_SECRET) {
-    console.warn(
-        "[auth] Using default AUTH_SECRET. Set AUTH_SECRET in the environment before deploying."
-    );
-}
-if (ADMIN_PASSWORD === DEFAULT_PASSWORD) {
-    console.warn(
-        "[auth] Using default ADMIN_PASSWORD. Set ADMIN_PASSWORD in the environment before deploying."
-    );
+if (SECRET === DEFAULT_SECRET || ADMIN_PASSWORD === DEFAULT_PASSWORD) {
+    const message =
+        "[auth] Using a built-in default AUTH_SECRET/ADMIN_PASSWORD. This is allowed for local development only.";
+    if (IS_PRODUCTION) {
+        // Never fall back to a well-known password in production: anyone who
+        // has read the source could sign in to /admin.
+        throw new Error(
+            "[auth] AUTH_SECRET and ADMIN_PASSWORD must be set in the environment when NODE_ENV=production."
+        );
+    }
+    console.warn(message);
 }
 
 function toBase64Url(value) {
@@ -45,16 +49,19 @@ function safeEqual(a, b) {
 }
 
 export function issueToken() {
-    const payload = {
+    return sign({
         role: "admin",
         iat: Date.now(),
         exp: Date.now() + TOKEN_TTL_MS,
-    };
+    });
+}
+
+function sign(payload) {
     const data = toBase64Url(JSON.stringify(payload));
     return `${data}.${signatureFor(data)}`;
 }
 
-export function verifyToken(token) {
+function unsign(token) {
     if (typeof token !== "string" || !token.includes(".")) return null;
 
     const [data, signature] = token.split(".");
@@ -69,6 +76,33 @@ export function verifyToken(token) {
     } catch {
         return null;
     }
+}
+
+export function verifyToken(token) {
+    const payload = unsign(token);
+    return payload?.role === "admin" ? payload : null;
+}
+
+const UPLOAD_GRANT_TTL_MS = 1000 * 60 * 5; // 5 minutes
+
+/**
+ * Short-lived, single-category grant used by direct-to-blob uploads. The
+ * Vercel blob client cannot send the admin bearer token, so the authenticated
+ * dashboard fetches a grant first and passes it as a query parameter instead.
+ */
+export function issueUploadGrant(category) {
+    return sign({
+        purpose: "upload",
+        category,
+        exp: Date.now() + UPLOAD_GRANT_TTL_MS,
+    });
+}
+
+export function verifyUploadGrant(token, category) {
+    const payload = unsign(token);
+    if (!payload || payload.purpose !== "upload") return null;
+    if (payload.category !== category) return null;
+    return payload;
 }
 
 export function isValidPassword(password) {

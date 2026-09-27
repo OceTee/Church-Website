@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { apiFetch, assetUrl } from "../../lib/api";
+import { createWithUpload } from "../../lib/uploads";
 import {
   cardClass,
   sectionTitleClass,
@@ -22,15 +23,11 @@ export default function GalleryManager({ photos, onChanged, onError }) {
 
     setBusy(true);
     try {
-      const body = new FormData();
-      body.append("image", form.file);
-      body.append("date", form.date);
-
-      const response = await apiFetch("/gallery", { method: "POST", body });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to upload photo");
-      }
+      await createWithUpload({
+        category: "gallery",
+        file: form.file,
+        fields: { date: form.date },
+      });
 
       event.target.reset();
       setForm(EMPTY_FORM);

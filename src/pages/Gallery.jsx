@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Maximize2 } from "lucide-react";
 import Header from "../components/Header";
+import ImageLightbox from "../components/ImageLightbox";
 import { apiFetch, assetUrl } from "../lib/api";
 
 export default function Gallery() {
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeIndex, setActiveIndex] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -13,7 +16,9 @@ export default function Gallery() {
       try {
         const response = await apiFetch("/gallery");
         const data = await response.json();
-        if (active) setPhotos(data);
+        if (active) {
+          setPhotos(data.map((photo) => ({ ...photo, fullUrl: assetUrl(photo.imageUrl) })));
+        }
       } catch (error) {
         console.error("Failed to fetch gallery:", error);
       } finally {
@@ -26,6 +31,18 @@ export default function Gallery() {
       active = false;
     };
   }, []);
+
+  const close = useCallback(() => setActiveIndex(null), []);
+
+  const step = useCallback(
+    (delta) => {
+      setActiveIndex((current) => {
+        if (current === null || photos.length === 0) return current;
+        return (current + delta + photos.length) % photos.length;
+      });
+    },
+    [photos.length]
+  );
 
   return (
     <div className="flex min-h-dvh flex-col items-center px-6 pt-32 pb-20">
@@ -43,18 +60,31 @@ export default function Gallery() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-            {photos.map((photo) => (
+            {photos.map((photo, index) => (
               <figure
                 key={photo.id}
-                className="group relative aspect-square overflow-hidden rounded-xl shadow-md"
+                onClick={() => setActiveIndex(index)}
+                role="button"
+                tabIndex={0}
+                aria-label={`View larger: ${photo.date || "photo"}`}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setActiveIndex(index);
+                  }
+                }}
+                className="group relative aspect-square cursor-zoom-in overflow-hidden rounded-xl shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#330040] focus-visible:ring-offset-2"
               >
                 <img
-                  src={assetUrl(photo.imageUrl)}
+                  src={photo.fullUrl}
                   alt={photo.date}
                   loading="lazy"
                   className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
-                <figcaption className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 via-transparent to-transparent p-4 font-inter text-sm text-white opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="absolute right-3 top-3 rounded-full bg-black/50 p-2 text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                  <Maximize2 size={16} />
+                </span>
+                <figcaption className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 via-transparent to-transparent p-4 font-inter text-sm text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
                   {photo.date}
                 </figcaption>
               </figure>
@@ -62,6 +92,14 @@ export default function Gallery() {
           </div>
         )}
       </div>
+
+      <ImageLightbox
+        photos={photos}
+        index={activeIndex}
+        onClose={close}
+        onPrev={() => step(-1)}
+        onNext={() => step(1)}
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { apiFetch } from "../../lib/api";
+import { createWithUpload } from "../../lib/uploads";
 import {
   cardClass,
   sectionTitleClass,
@@ -30,18 +31,16 @@ export default function EventManager({ events, onChanged, onError }) {
     setBusy(true);
 
     try {
-      const body = new FormData();
-      body.append("title", form.title);
-      body.append("description", form.description);
-      body.append("date", form.date);
-      body.append("time", form.time);
-      if (form.flyer) body.append("flyer", form.flyer);
-
-      const response = await apiFetch("/events", { method: "POST", body });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to add event");
-      }
+      await createWithUpload({
+        category: "events",
+        file: form.flyer,
+        fields: {
+          title: form.title,
+          description: form.description,
+          date: form.date,
+          time: form.time,
+        },
+      });
 
       event.target.reset();
       setForm(EMPTY_FORM);

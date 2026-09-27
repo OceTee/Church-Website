@@ -1,65 +1,78 @@
-import sqlite3 from 'sqlite3';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import "./env.js";
+import { createClient } from "@libsql/client";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dbPath = path.resolve(__dirname, 'database.sqlite');
 
-// Initialize database
-const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) {
-        console.error('Error opening database', err.message);
-    } else {
-        console.log('Connected to the SQLite database.');
-        
-        // Create Gallery table
-        db.run(`CREATE TABLE IF NOT EXISTS gallery (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            imageUrl TEXT NOT NULL,
-            date TEXT NOT NULL,
-            createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`);
+const localFilePath = path.join(__dirname, "database.sqlite");
+const remoteUrl = process.env.TURSO_DATABASE_URL;
+const authToken = process.env.TURSO_AUTH_TOKEN;
 
-        // Create Events table
-        db.run(`CREATE TABLE IF NOT EXISTS events (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            description TEXT NOT NULL,
-            date TEXT NOT NULL,
-            time TEXT NOT NULL,
-            flyerUrl TEXT,
-            createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`);
+// Production talks to a remote libSQL (Turso) database. Local development
+// falls back to a SQLite file so the app keeps working with no setup.
+const url = remoteUrl || `file:${localFilePath.replace(/\\/g, "/")}`;
 
-        // Create Sermons table
-        db.run(`CREATE TABLE IF NOT EXISTS sermons (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            date TEXT NOT NULL,
-            audioUrl TEXT NOT NULL,
-            createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`);
-    }
+if (!remoteUrl && !process.env.NODE_ENV) {
+    console.log(`[db] Using local SQLite file: ${localFilePath}`);
+}
+
+export const isRemoteDatabase = Boolean(remoteUrl);
+
+export const client = createClient({
+    url,
+    ...(authToken ? { authToken } : {}),
 });
 
-// Helper for queries to use Promises
-export const query = (sql, params = []) => {
-    return new Promise((resolve, reject) => {
-        db.all(sql, params, (err, rows) => {
-            if (err) reject(err);
-            else resolve(rows);
-        });
+// libSQL only accepts primitives, and rejects `undefined`.
+function normalizeParam(value) {
+    if (value === undefined) return null;
+    if (typeof value === "boolean") return value ? 1 : 0;
+    return value;
+}
+
+export async function query(sql, params = []) {
+    const result = await client.execute({
+        sql,
+        args: params.map(normalizeParam),
     });
-};
+    return result.rows;
+}
 
-export const run = (sql, params = []) => {
-    return new Promise((resolve, reject) => {
-        db.run(sql, params, function (err) {
-            if (err) reject(err);
-            else resolve(this);
-        });
+export async function run(sql, params = []) {
+    const result = await client.execute({
+        sql,
+        args: params.map(normalizeParam),
     });
-};
+    return {
+        lastID: Number(result.lastInsertRowid ?? 0),
+        changes: Number(result.rowsAffected ?? 0),
+    };
+}
 
-export default db;
+let schemaPromise = null;
 
+/**
+ * Creates any missing tables/indexes. Safe to call repeatedly and safe to call
+ * concurrently — the first call does the work, the rest await the same promise.
+ * The statements are batched so a cold start costs a single round trip.
+ */
+export function ensureSchema() {
+    if (!schemaPromise) {
+        schemaPromise = (async () => {
+            const sql = fs.readFileSync(path.join(__dirname, "schema.sql"), "utf8");
+            const statements = sql
+                .split(";")
+                .map((statement) => statement.trim())
+                .filter(Boolean);
+
+            await client.batch(statements.map((statement) => ({ sql: statement })), "write");
+        })().catch((error) => {
+            // Let the next caller retry instead of caching a failure forever.
+            schemaPromise = null;
+            throw error;
+        });
+    }
+    return schemaPromise;
+}

@@ -54,7 +54,11 @@ export default function Dashboard() {
   }, [handleError]);
 
   useEffect(() => {
-    loadContent();
+    // Called through a queued microtask so the initial fetch is not treated as
+    // a synchronous state update during the commit phase.
+    queueMicrotask(() => {
+      loadContent();
+    });
   }, [loadContent]);
 
   const handleSignOut = () => {

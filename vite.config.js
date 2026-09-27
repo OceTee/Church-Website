@@ -7,7 +7,9 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      // Proxy API requests to the Express backend during development
+      // Development only — the API runs as a separate process locally.
+      // On Vercel the SPA and the API share an origin, so /api goes straight
+      // to the serverless function and no proxy is involved.
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,

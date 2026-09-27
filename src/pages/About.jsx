@@ -1,11 +1,5 @@
 import Header from "../components/Header";
 
-const LEADERS = [
-  { name: "Pastor [Name]", role: "Lead Pastor" },
-  { name: "[Name]", role: "Associate Pastor" },
-  { name: "[Name]", role: "Worship Leader" },
-];
-
 export default function About() {
   return (
     <div className="flex min-h-dvh flex-col items-center px-6 pt-32 pb-20">

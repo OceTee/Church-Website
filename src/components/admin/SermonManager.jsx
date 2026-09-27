@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { apiFetch, assetUrl } from "../../lib/api";
+import { createWithUpload } from "../../lib/uploads";
 import {
   cardClass,
   sectionTitleClass,
@@ -25,16 +26,11 @@ export default function SermonManager({ sermons, onChanged, onError }) {
 
     setBusy(true);
     try {
-      const body = new FormData();
-      body.append("audio", form.file);
-      body.append("title", form.title);
-      body.append("date", form.date);
-
-      const response = await apiFetch("/sermons", { method: "POST", body });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to upload sermon");
-      }
+      await createWithUpload({
+        category: "sermons",
+        file: form.file,
+        fields: { title: form.title, date: form.date },
+      });
 
       event.target.reset();
       setForm(EMPTY_FORM);

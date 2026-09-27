@@ -4,6 +4,7 @@ import Header from "../components/Header";
 import ServiceSchedule from "../components/ServiceSchedule";
 import SocialLinks from "../components/SocialLinks";
 import { site } from "../config/site";
+import { apiJson } from "../lib/api";
 
 const EMPTY_FORM = { name: "", email: "", message: "" };
 
@@ -23,15 +24,11 @@ export default function Connect() {
     setIsSubmitting(true);
     setError(null);
     try {
-      const response = await fetch("http://localhost:5000/api/contact", {
+      await apiJson("/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to send message. Please try again later.");
-      }
 
       setSubmitted(true);
     } catch (err) {

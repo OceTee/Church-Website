@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', '.kilo']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [
@@ -23,8 +23,14 @@ export default defineConfig([
     },
   },
   {
-    // Server-side and config files run on Node, not in the browser.
-    files: ['server/**/*.js', 'vite.config.js', 'eslint.config.js'],
+    // Server-side, build and script files run on Node, not in the browser.
+    files: [
+      'server/**/*.js',
+      'api/**/*.js',
+      'scripts/**/*.js',
+      'vite.config.js',
+      'eslint.config.js',
+    ],
     languageOptions: {
       globals: globals.node,
     },
