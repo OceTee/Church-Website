@@ -9,10 +9,11 @@ import {
     authenticate,
     changePassword,
     requireAuth,
-    verifyToken,
     issueUploadGrant,
     verifyUploadGrant,
+    verifyToken,
     ensureAdminAccount,
+    getAdminSetupStatus,
 } from "./auth.js";
 import {
     createUpload,
@@ -33,6 +34,10 @@ const __dirname = path.dirname(__filename);
 const projectRoot = path.join(__dirname, "..");
 
 const app = express();
+
+// Set if database initialisation fails on cold start; surfaced by /api/health
+// rather than thrown, so a bad deployment still serves its other routes.
+let startupError = null;
 
 app.disable("x-powered-by");
 
@@ -84,6 +89,34 @@ app.get("/api", (req, res) => {
     res.json({ status: "ok", message: "CAC Possibility API is running." });
 });
 
+// Public configuration check so a misconfigured deployment can be diagnosed
+// from a browser. Reports booleans and problems only, never secret values.
+app.get("/api/health", async (req, res) => {
+    const status = getAdminSetupStatus();
+
+    let database = "ok";
+    try {
+        await query("SELECT 1");
+    } catch (error) {
+        database = `unreachable: ${error.message}`;
+    }
+
+    const emailConfigured = Boolean(process.env.EMAIL_USER && process.env.EMAIL_PASS);
+    const ready = database === "ok" && status.ok;
+
+    res.status(ready ? 200 : 503).json({
+        status: ready ? "ok" : "needs-attention",
+        database,
+        startupError: startupError ? startupError.message : null,
+        storage: isBlobStorage ? "vercel-blob" : "local-disk",
+        authSecretConfigured: Boolean(process.env.AUTH_SECRET),
+        adminAccount: status.ok ? "created" : "missing",
+        adminProblem: status.problem,
+        passwordWarning: status.passwordWarning,
+        contactEmailConfigured: emailConfigured,
+    });
+});
+
 // Tells the admin dashboard which upload transport to use. Large files cannot
 // travel through a serverless function body, so on Vercel the browser uploads
 // straight to Vercel Blob and only sends the resulting URL here.
@@ -104,6 +137,15 @@ app.post("/api/auth/login", async (req, res) => {
     const admin = await authenticate(password);
 
     if (!admin) {
+        const status = getAdminSetupStatus();
+        if (!status.ok) {
+            // Distinguish "the deployment is misconfigured" from "wrong
+            // password", otherwise this looks like a failed login forever.
+            return res.status(503).json({
+                error: status.problem,
+                code: "ADMIN_NOT_CONFIGURED",
+            });
+        }
         return res.status(401).json({ error: "Incorrect password" });
     }
     return res.json({ token: issueToken(admin.version) });
@@ -435,7 +477,16 @@ app.use((err, req, res, _next) => {
 
 // Create tables/indexes and the first admin account on cold start, so a fresh
 // database just works.
-await ensureSchema();
-await ensureAdminAccount();
+//
+// Neither step is allowed to throw: on Vercel a throw here means the function
+// never finishes booting, which takes down every route including the static-
+// backed public content. A failure is reported through `/api/health` instead.
+try {
+    await ensureSchema();
+    await ensureAdminAccount();
+} catch (error) {
+    startupError = error;
+    console.error("[startup] Database initialisation failed:", error);
+}
 
 export default app;

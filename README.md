@@ -84,9 +84,7 @@ Project **Settings → Environment Variables**, for *all* environments:
 | `EMAIL_PASS`            | contact  | Gmail **App Password** (not the account password) |
 | `EMAIL_RECEIVER`        | optional | Where form messages should land; defaults to `EMAIL_USER` |
 
-`AUTH_SECRET` has no production fallback — the API throws on boot without it
-rather than running on a well-known value. `ADMIN_PASSWORD` is only consulted
-when the admin table is empty; see [Admin access](#admin-access).
+Both `AUTH_SECRET` and `ADMIN_PASSWORD` are optional but strongly recommended. A missing one never stops the server: it is reported by `/api/health`, which never returns a secret value. See [Admin access](#admin-access).
 
 ### 5. Create the tables
 
@@ -152,8 +150,10 @@ To use one password everywhere, set the same `ADMIN_PASSWORD` in your local
 ### Changing it later
 
 **Admin panel → Change Admin Password.** Requires the current password. In
-production the new password must be at least 8 characters and cannot be the dev
-default `admin123`.
+production a short password is *allowed* but reported as a warning through
+`/api/health`, and `admin123` is called out explicitly because it is published
+in this repository. Weak passwords are never rejected outright: a working admin
+panel matters more than a policy, and the warning tells you what to fix.
 
 Changing it bumps a `passwordVersion` counter embedded in every session token,
 so **all other devices and browsers are signed out immediately** — a stolen
@@ -165,6 +165,33 @@ password in one does not change the other; set the same initial value in both
 if you want them to match, or point local development at the Turso database by
 setting `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in `.env` (but then local
 uploads write to the production Blob store, so prefer keeping them separate).
+
+### Diagnosing a deployment
+
+`GET /api/health` reports configuration state as booleans and messages — never
+secret values:
+
+```json
+{
+  "status": "ok",
+  "database": "ok",
+  "storage": "vercel-blob",
+  "authSecretConfigured": true,
+  "adminAccount": "created",
+  "passwordWarning": null,
+  "contactEmailConfigured": true
+}
+```
+
+`status` is `"needs-attention"` (HTTP 503) when `database` is unreachable or
+`adminAccount` is `"missing"`. Visit `<your-domain>/api/health` directly, or use
+the **"Having trouble signing in? Check the server"** link on the login page.
+
+Nothing in startup is allowed to throw. A missing `ADMIN_PASSWORD`, a missing
+`AUTH_SECRET` or an unreachable database is reported here and as a `503` on the
+login route, while every other route keeps serving — so a misconfigured
+deployment shows a specific, actionable message instead of appearing as a
+failed password or a blank error.
 
 ---
 

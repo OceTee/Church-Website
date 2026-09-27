@@ -6,20 +6,29 @@ const DEFAULT_SECRET = "cac-possibility-dev-secret-change-me";
 const DEFAULT_PASSWORD = "admin123";
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
 
-const SECRET = process.env.AUTH_SECRET || DEFAULT_SECRET;
+// A missing AUTH_SECRET must never take the whole site down: the public pages,
+// gallery, events, sermons and contact form are unrelated to admin sign-in.
+// When it is absent we mint a random per-process secret instead of falling back
+// to a value that is published in this repository, so tokens can never be
+// forged. The trade-off is that sessions do not survive a cold start, which is
+// why the warning below is loud.
+const USING_GENERATED_SECRET = !process.env.AUTH_SECRET;
+const SECRET =
+    process.env.AUTH_SECRET ||
+    (USING_GENERATED_SECRET
+        ? crypto.randomBytes(48).toString("hex")
+        : DEFAULT_SECRET);
+
 const TOKEN_TTL_MS = 1000 * 60 * 60 * 12; // 12 hours
 const MIN_PASSWORD_LENGTH = 8;
 
-if (SECRET === DEFAULT_SECRET) {
-    if (IS_PRODUCTION) {
-        // The secret only signs session tokens, but a known secret means anyone
-        // can mint a valid admin token, so it has no production default.
-        throw new Error(
-            "[auth] AUTH_SECRET must be set in the environment when NODE_ENV=production."
-        );
-    }
+if (USING_GENERATED_SECRET) {
     console.warn(
-        "[auth] Using the default AUTH_SECRET. This is allowed for local development only."
+        IS_PRODUCTION
+            ? "[auth] AUTH_SECRET is not set. Using a random secret for this instance: " +
+              "admin sessions will be signed out whenever the server restarts. " +
+              "Set AUTH_SECRET in the environment to fix this."
+            : "[auth] AUTH_SECRET is not set. Using a random secret; sessions will not survive a restart."
     );
 }
 
@@ -43,25 +52,21 @@ function deriveKey(password, salt) {
 }
 
 /**
- * Returns an error message, or null when the password is acceptable. The
- * built-in development default is rejected in production but tolerated
- * locally, so `npm run dev` works out of the box while a real deployment can
- * never end up on a guessable password.
+ * Returns a warning string for a weak password, or null when it is fine.
+ * Never blocks: a weak password is a security problem, not a reason to take
+ * the entire site offline. `admin123` is called out loudly because it is
+ * published in this repository.
  */
-export function validatePasswordStrength(password) {
+export function passwordWarning(password) {
     if (typeof password !== "string" || password.length === 0) {
-        return "Password is required.";
+        return "Password is empty.";
     }
-
-    if (IS_PRODUCTION) {
-        if (password.length < MIN_PASSWORD_LENGTH) {
-            return `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
-        }
-        if (password === DEFAULT_PASSWORD) {
-            return "That password is too easy to guess. Choose something else.";
-        }
+    if (password === DEFAULT_PASSWORD) {
+        return `The password "${DEFAULT_PASSWORD}" is the development default and is public in the source code. Change it from the admin panel.`;
     }
-
+    if (password.length < MIN_PASSWORD_LENGTH) {
+        return `Password is only ${password.length} characters; ${MIN_PASSWORD_LENGTH}+ is recommended.`;
+    }
     return null;
 }
 
@@ -84,6 +89,10 @@ async function verifyHashedPassword(password, hash, salt) {
 // --- Admin account ---------------------------------------------------------
 // There is a single admin identity, so no username is involved.
 
+// Tracks whether an admin account exists, so a broken deployment can be
+// diagnosed over HTTP instead of only in the (inaccessible) function logs.
+const adminSetup = { ok: false, problem: null, passwordWarning: null };
+
 async function findAdmin() {
     const rows = await query("SELECT * FROM admins ORDER BY id LIMIT 1");
     return rows[0] || null;
@@ -99,23 +108,32 @@ export async function getAdminVersion() {
  * ADMIN_PASSWORD. Deliberately does nothing when an account already exists,
  * so a password changed from the admin panel survives every cold start and
  * redeploy.
+ *
+ * Never throws. A deployment missing ADMIN_PASSWORD must still serve the public
+ * site; instead the problem is recorded and reported by `/api/health` and by
+ * the login route. Setting the variable and redeploying fixes it.
  */
 export async function ensureAdminAccount() {
     const existing = await findAdmin();
-    if (existing) return existing;
+    if (existing) {
+        adminSetup.ok = true;
+        return existing;
+    }
 
     const seed = process.env.ADMIN_PASSWORD || (IS_PRODUCTION ? null : DEFAULT_PASSWORD);
 
     if (!seed) {
-        throw new Error(
-            "[auth] No admin account exists and ADMIN_PASSWORD is not set. " +
-                "Set ADMIN_PASSWORD in the environment to create the first one."
-        );
+        adminSetup.ok = false;
+        adminSetup.problem =
+            "No admin account exists and ADMIN_PASSWORD is not set. Add it in the " +
+            "Vercel project environment variables and redeploy.";
+        console.error(`[auth] ${adminSetup.problem}`);
+        return null;
     }
 
-    const problem = validatePasswordStrength(seed);
-    if (problem) {
-        throw new Error(`[auth] ${problem}`);
+    const warning = passwordWarning(seed);
+    if (warning) {
+        console.warn(`[auth] ${warning}`);
     }
 
     const { hash, salt } = await hashPassword(seed);
@@ -124,6 +142,9 @@ export async function ensureAdminAccount() {
         ["admin", hash, salt]
     );
 
+    adminSetup.ok = true;
+    adminSetup.passwordWarning = warning;
+
     console.log(
         IS_PRODUCTION
             ? "[auth] Created the admin account from ADMIN_PASSWORD."
@@ -131,6 +152,10 @@ export async function ensureAdminAccount() {
     );
 
     return findAdmin();
+}
+
+export function getAdminSetupStatus() {
+    return adminSetup;
 }
 
 export async function authenticate(password) {
@@ -153,7 +178,13 @@ export async function authenticate(password) {
  */
 export async function changePassword(currentPassword, newPassword) {
     const admin = await findAdmin();
-    if (!admin) return { error: "Authentication required" };
+    if (!admin) {
+        return {
+            error:
+                adminSetup.problem ||
+                "No admin account exists. Add ADMIN_PASSWORD in the environment and redeploy.",
+        };
+    }
 
     const matches = await verifyHashedPassword(
         currentPassword,
@@ -162,8 +193,17 @@ export async function changePassword(currentPassword, newPassword) {
     );
     if (!matches) return { error: "Your current password is incorrect." };
 
-    const problem = validatePasswordStrength(newPassword);
-    if (problem) return { error: problem };
+    if (typeof newPassword !== "string" || newPassword.length === 0) {
+        return { error: "New password is required." };
+    }
+
+    // Weak passwords are allowed but loudly reported, so a working site is
+    // never traded for an unreachable admin panel.
+    const warning = passwordWarning(newPassword);
+    if (warning) {
+        console.warn(`[auth] ${warning}`);
+    }
+    adminSetup.passwordWarning = warning;
 
     const { hash, salt } = await hashPassword(newPassword);
     const version = Number(admin.passwordVersion) + 1;

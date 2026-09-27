@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LockKeyhole } from "lucide-react";
 import Header from "../components/Header";
 import { login } from "../lib/auth";
+import { apiUrl } from "../lib/api";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -12,6 +13,18 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [health, setHealth] = useState(null);
+
+  const checkServer = async () => {
+    setError("");
+    try {
+      const response = await fetch(apiUrl("/health"));
+      const data = await response.json().catch(() => null);
+      setHealth(data ?? { error: "No JSON response from /api/health." });
+    } catch {
+      setHealth({ error: "Could not reach /api/health." });
+    }
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -64,6 +77,27 @@ export default function Login() {
             {submitting ? "Signing in..." : "Sign In"}
           </button>
         </form>
+
+        <div className="mt-8 border-t pt-4">
+          <button
+            type="button"
+            onClick={checkServer}
+            className="font-inter text-xs text-gray-500 underline hover:text-[#65007f]"
+          >
+            Having trouble signing in? Check the server
+          </button>
+
+          {health && (
+            <dl className="mt-3 space-y-1 rounded-lg bg-gray-50 p-3 font-mono text-xs text-gray-700">
+              {Object.entries(health).map(([key, value]) => (
+                <div key={key} className="flex gap-2">
+                  <dt className="shrink-0 text-gray-500">{key}:</dt>
+                  <dd className="break-all">{String(value)}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+        </div>
 
         <Link
           to="/"

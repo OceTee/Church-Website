@@ -31,11 +31,37 @@ export function isAuthenticated() {
 }
 
 export async function login(password) {
-  const response = await fetch(apiUrl("/auth/login"), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ password }),
-  });
+  let response;
+  try {
+    response = await fetch(apiUrl("/auth/login"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+  } catch {
+    throw new Error(
+      "Could not reach the server. Check your connection and try again."
+    );
+  }
+
+  // A misconfigured deployment answers 503 with a specific reason, and a
+  // missing API function answers with the SPA's HTML. Both are server problems
+  // rather than a bad password, and must not be reported as "Incorrect
+  // password" or the user will keep retrying the wrong thing.
+  if (response.status === 503) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(
+      data.error ||
+        "The server is not fully configured yet. See the deployment notes."
+    );
+  }
+
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    throw new Error(
+      "The server did not return a valid API response. The API function may not be deployed — check the Vercel Functions section."
+    );
+  }
 
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
