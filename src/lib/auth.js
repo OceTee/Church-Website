@@ -30,6 +30,28 @@ export function isAuthenticated() {
   return Boolean(getToken());
 }
 
+let cachedAuthMode = null;
+
+/**
+ * Whether the server still requires a password. The admin panel asks the API
+ * once and caches the answer, so it can skip the login screen when the server
+ * runs with AUTH_DISABLED=true.
+ */
+export async function getAuthMode() {
+  if (!cachedAuthMode) {
+    try {
+      const response = await fetch(apiUrl("/config"));
+      const data = await response.json();
+      cachedAuthMode = data.authMode || "required";
+    } catch {
+      // If the API cannot be reached, assume auth is required: the safe choice
+      // is to show the login page rather than an open admin panel.
+      cachedAuthMode = "required";
+    }
+  }
+  return cachedAuthMode;
+}
+
 export async function login(password) {
   let response;
   try {

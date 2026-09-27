@@ -14,6 +14,7 @@ import {
     verifyToken,
     ensureAdminAccount,
     getAdminSetupStatus,
+    isAuthDisabled,
 } from "./auth.js";
 import {
     createUpload,
@@ -102,7 +103,8 @@ app.get("/api/health", async (req, res) => {
     }
 
     const emailConfigured = Boolean(process.env.EMAIL_USER && process.env.EMAIL_PASS);
-    const ready = database === "ok" && status.ok;
+    const authDisabled = isAuthDisabled();
+    const ready = database === "ok" && (status.ok || authDisabled);
 
     res.status(ready ? 200 : 503).json({
         status: ready ? "ok" : "needs-attention",
@@ -110,6 +112,7 @@ app.get("/api/health", async (req, res) => {
         startupError: startupError ? startupError.message : null,
         storage: isBlobStorage ? "vercel-blob" : "local-disk",
         authSecretConfigured: Boolean(process.env.AUTH_SECRET),
+        authDisabled,
         adminAccount: status.ok ? "created" : "missing",
         adminProblem: status.problem,
         passwordWarning: status.passwordWarning,
@@ -123,6 +126,7 @@ app.get("/api/health", async (req, res) => {
 app.get("/api/config", (req, res) => {
     res.json({
         uploadMode: isBlobStorage ? "direct" : "server",
+        authMode: isAuthDisabled() ? "disabled" : "required",
         maxBytes: {
             gallery: uploadLimits("gallery").maximumSizeInBytes,
             events: uploadLimits("events").maximumSizeInBytes,

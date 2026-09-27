@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LockKeyhole } from "lucide-react";
 import Header from "../components/Header";
-import { login } from "../lib/auth";
+import { getAuthMode, login } from "../lib/auth";
 import { apiUrl } from "../lib/api";
 
 export default function Login() {
@@ -14,6 +14,19 @@ export default function Login() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [health, setHealth] = useState(null);
+
+  // With AUTH_DISABLED there is no password to enter, so skip the form.
+  useEffect(() => {
+    let active = true;
+    getAuthMode().then((mode) => {
+      if (active && mode === "disabled") {
+        navigate(redirectTo, { replace: true });
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [navigate, redirectTo]);
 
   const checkServer = async () => {
     setError("");

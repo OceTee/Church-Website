@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogOut } from "lucide-react";
+import { LogOut, ShieldAlert } from "lucide-react";
 import Header from "../components/Header";
 import EventManager from "../components/admin/EventManager";
 import GalleryManager from "../components/admin/GalleryManager";
 import SermonManager from "../components/admin/SermonManager";
 import PasswordManager from "../components/admin/PasswordManager";
 import { apiFetch } from "../lib/api";
-import { isAuthenticated, logout } from "../lib/auth";
+import { getAuthMode, isAuthenticated, logout } from "../lib/auth";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -15,6 +15,17 @@ export default function Dashboard() {
   const [events, setEvents] = useState([]);
   const [sermons, setSermons] = useState([]);
   const [error, setError] = useState("");
+  const [authDisabled, setAuthDisabled] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    getAuthMode().then((mode) => {
+      if (active) setAuthDisabled(mode === "disabled");
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleError = useCallback(
     (err) => {
@@ -85,13 +96,24 @@ export default function Dashboard() {
           </button>
         </div>
 
+        {authDisabled && (
+          <p className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 font-inter text-sm text-amber-800">
+            <ShieldAlert size={18} className="mt-0.5 shrink-0" />
+            <span>
+              Authentication is disabled on this server (<code>AUTH_DISABLED</code>),
+              so this panel is open to anyone — including the delete buttons
+              below. Never leave this switched on for a public deployment.
+            </span>
+          </p>
+        )}
+
         {error && (
           <p className="rounded-lg bg-red-50 px-4 py-3 font-inter text-sm text-red-600">
             {error}
           </p>
         )}
 
-        <PasswordManager />
+        {!authDisabled && <PasswordManager />}
         <EventManager events={events} onChanged={loadContent} onError={handleError} />
         <GalleryManager photos={photos} onChanged={loadContent} onError={handleError} />
         <SermonManager sermons={sermons} onChanged={loadContent} onError={handleError} />

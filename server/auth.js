@@ -21,6 +21,36 @@ const SECRET =
 
 const TOKEN_TTL_MS = 1000 * 60 * 60 * 12; // 12 hours
 
+// --- AUTH BYPASS -----------------------------------------------------------
+// Temporary escape hatch: with AUTH_DISABLED=true the admin panel is open and
+// every requireAuth route accepts any request. This is meant for local work
+// while the real credential setup is sorted out.
+//
+// WARNING: do NOT enable this on the public deployment. The admin routes
+// include DELETE /api/sermons/:id, /api/events/:id and /api/gallery/:id, so an
+// open panel lets any visitor erase the site's content permanently.
+const AUTH_DISABLED = process.env.AUTH_DISABLED === "true";
+
+if (AUTH_DISABLED) {
+    const banner = [
+        "",
+        "  ############################################################",
+        "  #  AUTH IS DISABLED — THE ADMIN PANEL IS OPEN TO EVERYONE  #",
+        "  ############################################################",
+        "",
+        "  Anyone who can reach this server can upload and DELETE",
+        "  sermons, events and gallery photos without signing in.",
+        "",
+    ];
+
+    if (IS_PRODUCTION) {
+        banner.push("  THIS IS A PUBLIC DEPLOYMENT. TURN THIS OFF NOW.");
+        banner.push("");
+    }
+
+    console.warn(banner.join("\n"));
+}
+
 if (USING_GENERATED_SECRET) {
     console.warn(
         IS_PRODUCTION
@@ -41,12 +71,21 @@ if (USING_GENERATED_SECRET) {
 // diagnosed over HTTP instead of only in the (inaccessible) function logs.
 const adminSetup = { ok: false, problem: null, passwordWarning: null };
 
+// Sentinel version used while auth is bypassed. Any value works because
+// requireAuth and authenticate short-circuit before comparing.
+const BYPASS_VERSION = 0;
+
 async function findAdmin() {
     const rows = await query("SELECT * FROM admins ORDER BY id LIMIT 1");
     return rows[0] || null;
 }
 
+export function isAuthDisabled() {
+    return AUTH_DISABLED;
+}
+
 export async function getAdminVersion() {
+    if (AUTH_DISABLED) return BYPASS_VERSION;
     const admin = await findAdmin();
     return admin ? Number(admin.passwordVersion) : 0;
 }
@@ -62,6 +101,11 @@ export async function getAdminVersion() {
  * the login route. Setting the variable and redeploying fixes it.
  */
 export async function ensureAdminAccount() {
+    if (AUTH_DISABLED) {
+        adminSetup.ok = true;
+        return null;
+    }
+
     const existing = await findAdmin();
     if (existing) {
         adminSetup.ok = true;
@@ -107,6 +151,9 @@ export function getAdminSetupStatus() {
 }
 
 export async function authenticate(password) {
+    // With auth disabled, accept any input — including an empty one.
+    if (AUTH_DISABLED) return { id: 0, version: BYPASS_VERSION };
+
     const admin = await findAdmin();
     if (!admin) return null;
 
@@ -246,6 +293,7 @@ export function issueUploadGrant(category) {
 }
 
 export function verifyUploadGrant(token, category) {
+    if (AUTH_DISABLED) return { category };
     const payload = unsign(token);
     if (!payload || payload.purpose !== "upload") return null;
     if (payload.category !== category) return null;
@@ -253,6 +301,11 @@ export function verifyUploadGrant(token, category) {
 }
 
 export async function requireAuth(req, res, next) {
+    if (AUTH_DISABLED) {
+        req.admin = { role: "admin", bypass: true };
+        return next();
+    }
+
     const header = req.headers.authorization || "";
     const token = header.startsWith("Bearer ") ? header.slice(7) : null;
     const payload = verifyToken(token);

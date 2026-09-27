@@ -191,6 +191,23 @@ session.
 
 There is deliberately **no HTTP route** that can call this script.
 
+### Disabling authentication (temporary)
+
+Setting `AUTH_DISABLED=true` opens the admin panel with no login at all. Every
+`requireAuth` route accepts any request, `/admin` renders without redirecting,
+`/api/config` reports `authMode: "disabled"`, and a warning banner appears on
+the dashboard. The server prints a loud banner on boot, adding
+"THIS IS A PUBLIC DEPLOYMENT" when `NODE_ENV=production`.
+
+> **Never enable this on the public deployment.** The admin routes include
+> `DELETE /api/sermons/:id`, `/api/events/:id` and `/api/gallery/:id`, so an
+> open panel lets any visitor erase the site's content permanently. There is
+> no rate limit or lockout on the admin routes to slow that down.
+
+It is safe for local work, and it is a single flag to undo — delete the line
+and restart. The password, its hash, and the login screen are all left intact
+rather than commented out, so nothing has to be un-commented later.
+
 ### Diagnosing a deployment
 
 `GET /api/health` reports configuration state as booleans and messages — never
