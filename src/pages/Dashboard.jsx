@@ -5,6 +5,7 @@ import Header from "../components/Header";
 import EventManager from "../components/admin/EventManager";
 import GalleryManager from "../components/admin/GalleryManager";
 import SermonManager from "../components/admin/SermonManager";
+import PasswordManager from "../components/admin/PasswordManager";
 import { apiFetch } from "../lib/api";
 import { isAuthenticated, logout } from "../lib/auth";
 
@@ -90,6 +91,7 @@ export default function Dashboard() {
           </p>
         )}
 
+        <PasswordManager />
         <EventManager events={events} onChanged={loadContent} onError={handleError} />
         <GalleryManager photos={photos} onChanged={loadContent} onError={handleError} />
         <SermonManager sermons={sermons} onChanged={loadContent} onError={handleError} />

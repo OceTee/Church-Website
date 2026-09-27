@@ -1,5 +1,6 @@
 import "../server/env.js";
 import { client, isRemoteDatabase, ensureSchema } from "../server/db.js";
+import { ensureAdminAccount } from "../server/auth.js";
 
 const url = isRemoteDatabase ? "remote libSQL (Turso)" : "local SQLite file";
 
@@ -14,6 +15,11 @@ try {
     for (const row of tables.rows) {
         console.log(`  - ${row.name}`);
     }
+
+    const admin = await ensureAdminAccount();
+    console.log(
+        `Admin account "${admin.username}" is ready (password version ${admin.passwordVersion}).`
+    );
     process.exit(0);
 } catch (error) {
     console.error("Failed to apply schema:");

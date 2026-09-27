@@ -47,6 +47,32 @@ export async function login(password) {
   return data.token;
 }
 
+/**
+ * Changes the admin password. The server invalidates every existing session,
+ * so it hands back a fresh token which is stored immediately — otherwise the
+ * current session would be logged out of the panel it was just used from.
+ */
+export async function changePassword(currentPassword, newPassword) {
+  const response = await fetch(apiUrl("/auth/password"), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
+    },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    clearToken();
+    throw new Error(data.error || "Unable to change the password");
+  }
+
+  const data = await response.json();
+  setToken(data.token);
+  return data.token;
+}
+
 export function logout() {
   clearToken();
 }

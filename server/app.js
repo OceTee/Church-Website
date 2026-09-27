@@ -6,11 +6,13 @@ import { fileURLToPath } from "url";
 import { query, run, ensureSchema } from "./db.js";
 import {
     issueToken,
-    isValidPassword,
+    authenticate,
+    changePassword,
     requireAuth,
     verifyToken,
     issueUploadGrant,
     verifyUploadGrant,
+    ensureAdminAccount,
 } from "./auth.js";
 import {
     createUpload,
@@ -97,21 +99,31 @@ app.get("/api/config", (req, res) => {
 });
 
 // --- AUTH ENDPOINTS ---
-app.post("/api/auth/login", (req, res) => {
+app.post("/api/auth/login", async (req, res) => {
     const { password } = req.body || {};
-    if (!isValidPassword(password)) {
+    const admin = await authenticate(password);
+
+    if (!admin) {
         return res.status(401).json({ error: "Incorrect password" });
     }
-    return res.json({ token: issueToken() });
+    return res.json({ token: issueToken(admin.version) });
 });
 
-app.get("/api/auth/session", (req, res) => {
-    const header = req.headers.authorization || "";
-    const token = header.startsWith("Bearer ") ? header.slice(7) : null;
-    if (!verifyToken(token)) {
-        return res.status(401).json({ error: "Authentication required" });
+app.get("/api/auth/session", requireAuth, (req, res) => {
+    res.json({ authenticated: true });
+});
+
+// Changing the password retires every existing session, including this one, so
+// the response carries a freshly signed token for the new version.
+app.post("/api/auth/password", requireAuth, async (req, res) => {
+    const { currentPassword, newPassword } = req.body || {};
+
+    const result = await changePassword(currentPassword, newPassword);
+    if (result.error) {
+        return res.status(400).json({ error: result.error });
     }
-    return res.json({ authenticated: true });
+
+    res.json({ token: issueToken(result.version) });
 });
 
 // --- DIRECT-TO-BLOB UPLOAD ---
@@ -421,7 +433,9 @@ app.use((err, req, res, _next) => {
     serverError(res, err);
 });
 
-// Create tables/indexes on cold start so a fresh database just works.
+// Create tables/indexes and the first admin account on cold start, so a fresh
+// database just works.
 await ensureSchema();
+await ensureAdminAccount();
 
 export default app;

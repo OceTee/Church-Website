@@ -13,7 +13,7 @@ deployed entirely on Vercel (static SPA + serverless function).
 | API        | Express 5, deployed as a Vercel serverless function (`api/`)       |
 | Database   | libSQL — Turso in production, a local SQLite file in development   |
 | Uploads    | Vercel Blob in production, `public/uploads` in development         |
-| Auth       | Single shared admin password, HMAC-signed 12-hour bearer tokens    |
+| Auth       | Single shared admin password, scrypt-hashed, HMAC-signed 12-hour tokens |
 
 ### Why not just SQLite + local uploads?
 
@@ -76,7 +76,7 @@ Project **Settings → Environment Variables**, for *all* environments:
 | Variable                | Required | Value                                          |
 | ----------------------- | -------- | ---------------------------------------------- |
 | `AUTH_SECRET`           | yes      | `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"` |
-| `ADMIN_PASSWORD`        | yes      | The password used at `/admin/login`            |
+| `ADMIN_PASSWORD`        | first run only | Seeds the first admin account. ≥ 8 characters in production. Ignored once the account exists. |
 | `TURSO_DATABASE_URL`    | yes      | `libsql://…turso.io` from step 1              |
 | `TURSO_AUTH_TOKEN`      | yes      | Auth token from step 1                        |
 | `BLOB_READ_WRITE_TOKEN` | yes      | Added automatically in step 2                 |
@@ -84,8 +84,9 @@ Project **Settings → Environment Variables**, for *all* environments:
 | `EMAIL_PASS`            | contact  | Gmail **App Password** (not the account password) |
 | `EMAIL_RECEIVER`        | optional | Where form messages should land; defaults to `EMAIL_USER` |
 
-`AUTH_SECRET` and `ADMIN_PASSWORD` have no production fallback — the API throws
-on boot without them rather than running on a well-known default.
+`AUTH_SECRET` has no production fallback — the API throws on boot without it
+rather than running on a well-known value. `ADMIN_PASSWORD` is only consulted
+when the admin table is empty; see [Admin access](#admin-access).
 
 ### 5. Create the tables
 
@@ -131,10 +132,39 @@ is dynamically imported, so it is never bundled into the pages visitors load.
 
 ## Admin access
 
-`/admin/login` takes the single `ADMIN_PASSWORD`. The session is a 12-hour
-HMAC-signed token in `localStorage` under `cac_admin_token`. There are no
-individual user accounts, so use a long, unique password and rotate it if it
-ever leaks.
+`/admin/login` takes a single shared password. The password is stored in the
+database as a **scrypt hash with a random salt** — the plaintext is never kept,
+so a leaked database does not hand it over. The session is a 12-hour
+HMAC-signed token in `localStorage` under `cac_admin_token`.
+
+There are no individual user accounts. Use a long, unique password.
+
+### Setting the first password
+
+`ADMIN_PASSWORD` is only read when the `admins` table is **empty**. On the
+first boot the server hashes that value and creates the account; on every boot
+afterwards the table is already populated, so the env var is ignored. That
+means a password changed from the panel survives redeploys and cold starts.
+
+To use one password everywhere, set the same `ADMIN_PASSWORD` in your local
+`.env` and in the Vercel environment variables.
+
+### Changing it later
+
+**Admin panel → Change Admin Password.** Requires the current password. In
+production the new password must be at least 8 characters and cannot be the dev
+default `admin123`.
+
+Changing it bumps a `passwordVersion` counter embedded in every session token,
+so **all other devices and browsers are signed out immediately** — a stolen
+token cannot outlive a password change. The device that made the change
+receives a fresh token and stays signed in.
+
+Note that the local and production databases are separate. Changing the
+password in one does not change the other; set the same initial value in both
+if you want them to match, or point local development at the Turso database by
+setting `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in `.env` (but then local
+uploads write to the production Blob store, so prefer keeping them separate).
 
 ---
 
