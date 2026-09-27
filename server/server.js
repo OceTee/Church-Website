@@ -233,6 +233,53 @@ app.delete("/api/sermons/:id", requireAuth, async (req, res) => {
     }
 });
 
+// --- CONTACT ENDPOINT ---
+import nodemailer from "nodemailer";
+import dotenv from "dotenv";
+dotenv.config();
+
+app.post("/api/contact", async (req, res) => {
+    try {
+        const { name, email, message } = req.body || {};
+        if (!name || !email || !message) {
+            return badRequest(res, "Name, email, and message are required");
+        }
+
+        const { EMAIL_USER, EMAIL_PASS, EMAIL_RECEIVER } = process.env;
+
+        if (!EMAIL_USER || !EMAIL_PASS) {
+            console.error("Email credentials missing in .env");
+            return res.status(500).json({ error: "Server email configuration is missing." });
+        }
+
+        const transporter = nodemailer.createTransport({
+            service: "gmail", // Assuming Gmail, adjust if needed
+            auth: {
+                user: EMAIL_USER,
+                pass: EMAIL_PASS,
+            },
+        });
+
+        const mailOptions = {
+            from: `"${name}" <${EMAIL_USER}>`, // Send from authenticated user to avoid spam flags
+            replyTo: email,
+            to: EMAIL_RECEIVER || EMAIL_USER,
+            subject: `New Contact Message from ${name}`,
+            text: `You have received a new message from your website contact form:\n\nName: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
+            html: `<p>You have received a new message from your website contact form:</p>
+                   <p><strong>Name:</strong> ${name}<br/>
+                   <strong>Email:</strong> ${email}</p>
+                   <p><strong>Message:</strong></p>
+                   <p>${message.replace(/\n/g, '<br/>')}</p>`,
+        };
+
+        await transporter.sendMail(mailOptions);
+        res.json({ message: "Email sent successfully" });
+    } catch (err) {
+        serverError(res, err);
+    }
+});
+
 // Multer (upload) errors -> JSON responses instead of HTML stack traces
 app.use(handleUploadError);
 

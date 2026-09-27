@@ -20,7 +20,7 @@ export const site = {
   giving: {
     accountNumber: "XXXXXXXX",
     accountName: "XXXXXX",
-    bank: "XXXXXX",
+    bank: "Access Bank PLC",
   },
   serviceTimes: [
     {
@@ -34,13 +34,13 @@ export const site = {
   ],
   // TODO: replace with the real contact details.
   contact: {
-    email: "info@example.com",
-    phone: "+234 000 000 0000",
+    email: "taoladoja011203@gmail.com",
+    phone: "+234 807 686 3599",
   },
   // TODO: replace href values with the real profile URLs. They currently
   // point at the internal Connect page so every link resolves.
   socials: [
-    { label: "Website", icon: "globe", href: "/connect" },
+    { label: "Website", icon: "globe", href: "/" },
     { label: "Telegram", icon: "send", href: "/connect" },
     { label: "WhatsApp", icon: "message-circle", href: "/connect" },
     { label: "Instagram", icon: "camera", href: "/connect" },

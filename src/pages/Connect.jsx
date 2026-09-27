@@ -11,13 +11,34 @@ export default function Connect() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitted, setSubmitted] = useState(false);
 
+  const [error, setError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleChange = (event) => {
     setForm({ ...form, [event.target.name]: event.target.value });
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    setSubmitted(true);
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const response = await fetch("http://localhost:5000/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send message. Please try again later.");
+      }
+
+      setSubmitted(true);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -110,12 +131,16 @@ export default function Connect() {
                 placeholder="How can we help?"
                 className="rounded-lg border border-gray-200 p-3 font-inter focus:border-[#9550a7] focus:outline-none"
               />
-              <button
-                type="submit"
-                className="self-start rounded-full bg-[#65007f] px-6 py-3 font-inter text-white transition hover:bg-[#500066]"
-              >
-                Send Message
-              </button>
+              <div className="flex flex-col gap-2">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="self-start rounded-full bg-[#65007f] px-6 py-3 font-inter text-white transition hover:bg-[#500066] disabled:opacity-70"
+                >
+                  {isSubmitting ? "Sending..." : "Send Message"}
+                </button>
+                {error && <p className="text-red-500 font-inter text-sm">{error}</p>}
+              </div>
             </form>
           )}
         </div>

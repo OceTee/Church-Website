@@ -52,30 +52,6 @@ export default function About() {
             </div>
           </div>
         </section>
-
-        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm sm:p-10">
-          <h2 className="mb-8 font-playfair text-2xl font-bold text-[#330040] md:text-3xl">
-            Leadership Team
-          </h2>
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3">
-            {LEADERS.map((leader) => (
-              <div
-                key={leader.role}
-                className="flex flex-col items-center text-center"
-              >
-                <div className="mb-4 flex h-32 w-32 items-center justify-center rounded-full bg-gray-200 font-inter text-sm text-gray-400 shadow-inner">
-                  Photo
-                </div>
-                <h3 className="font-playfair text-xl font-bold text-[#330040]">
-                  {leader.name}
-                </h3>
-                <p className="font-inter text-base text-[#65007f]">
-                  {leader.role}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
       </div>
     </div>
   );
