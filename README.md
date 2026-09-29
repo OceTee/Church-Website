@@ -1,312 +1,284 @@
-# Church Website
+# CAC Possibility Assembly Nation — Website
 
-CAC Possibility Assembly Nation — React 19 + Vite frontend with an Express 5 API,
-deployed entirely on Vercel (static SPA + serverless function).
-
----
-
-## Stack
-
-| Concern    | Choice                                                             |
-| ---------- | ------------------------------------------------------------------ |
-| Frontend   | React 19, Vite 8, Tailwind v4, React Router 7                     |
-| API        | Express 5, deployed as a Vercel serverless function (`backend/api/`)  |
-| Database   | libSQL — Turso in production, a local SQLite file in development   |
-| Uploads    | Vercel Blob in production, `public/uploads` in development         |
-| Auth       | Single shared admin password, scrypt-hashed, HMAC-signed 12-hour tokens |
-
-### Why not just SQLite + local uploads?
-
-Vercel functions have no persistent, writable filesystem. A `database.sqlite`
-file and anything written to `backend/public/uploads` are discarded on the next cold
-start and after every deploy. That is why production uses Turso and Vercel Blob,
-and why the code falls back to the local file/disk drivers when those env vars
-are absent. Local development is therefore unchanged — no accounts needed.
+A handover note from whoever built and deployed this. I've written it as a
+report rather than a manual: what I was asked for, what I did, what broke along
+the way, what's live now, and what's left for you. The operating instructions
+are at the bottom.
 
 ---
 
-## Local development
+## 1. What I was asked to do
 
-The repository is a monorepo with two independently deployable apps:
+The site was written and had been deployed, but the API was dead. Every request
+to `/api/*` in production came back as the SPA's `index.html` instead of JSON, so
+the admin panel, the gallery, events, and sermons were all non-functional.
 
-```
-frontend/   React + Vite SPA          -> its own Vercel project
-backend/    Express 5 API + /api/*    -> its own Vercel project
-```
+I was asked to get it working and take it live.
 
-They are separate because a single-project deployment cannot serve both: a
-`"/(.*)" -> "/index.html"` rewrite makes Vercel return the SPA's HTML for every
-`/api/*` request, so the API is unreachable. Splitting them gives the frontend
-a real API and the API a real function.
+## 2. What I delivered
 
-```bash
-npm run setup           # installs root, backend and frontend dependencies
-npm run dev             # Vite on :5173, API on :5000
-```
+**A working site, deployed, on a real database.**
 
-`npm run dev` starts both processes. Vite proxies `/api` and `/uploads` to
-`http://localhost:5000`, so the browser only ever talks to one origin.
+| | |
+| --- | --- |
+| **Live site** | https://church-website-web.vercel.app |
+| **Live API** | https://church-website-api.vercel.app |
+| **Database** | `libsql://church-tenixvtg.aws-eu-west-1.turso.io` (Turso, free tier) |
+| **File storage** | Vercel Blob store `church-media` |
+| **Credentials** | `C:\Users\Tenix\Documents\Church-Site-Credentials\credentials.txt` |
 
-Copy `backend/.env.example` to `backend/.env` and `frontend/.env.example` to
-`frontend/.env`. Both have working local defaults, so they are optional.
+Everything that used to be one project is now two, because that was the only way
+to fix the original fault.
 
-Other scripts:
+## 3. Why the API was returning HTML
 
-| Script                   | Purpose                                          |
-| ------------------------ | ------------------------------------------------ |
-| `npm run build`          | Production frontend build into `frontend/dist/`  |
-| `npm run lint`           | ESLint across both apps                         |
-| `npm run db:migrate`     | Apply `backend/server/schema.sql` to the database |
-| `npm run db:set-password` | Set or reset the admin password                 |
-| `npm run dev:backend`    | Run the API alone (no Vite)                      |
-| `npm run deploy:backend` | Deploy the backend to Vercel (production)        |
-| `npm run deploy:frontend`| Deploy the frontend to Vercel (production)       |
+Both halves of the site lived in a single Vercel project sharing a single
+`vercel.json`. That file contained a rewrite:
 
----
-
-## Deploying to Vercel
-
-Two projects, deployed from the two subdirectories. The order matters: deploy
-the backend first so you know its URL for the frontend's `VITE_API_URL`.
-
-```bash
-vercel link --cwd backend    # or: cd backend && vercel link
-vercel --cwd backend --prod
+```json
+{ "source": "/(.*)", "destination": "/index.html" }
 ```
 
-Then set the backend's env vars (Vercel dashboard > backend project >
-Settings > Environment Variables, and redeploy):
+That rewrite is correct for a single-page app — it makes `/sermons` and
+`/admin/login` survive a hard refresh. But Vercel applies it to *everything*,
+including `/api/*`. So the API requests were answered with the HTML of the front
+end, and no amount of work inside the API code could have fixed it. The rewrite
+had to go, and it can't go in a project that also serves the front end.
 
-| Variable                | Required | Purpose                                        |
-| ----------------------- | -------- | ---------------------------------------------- |
-| `ALLOWED_ORIGIN`        | yes      | Frontend origin, e.g. `https://site.vercel.app`. Comma-separate for several. |
-| `TURSO_DATABASE_URL`    | yes      | Persistent database                            |
-| `TURSO_AUTH_TOKEN`      | yes      | Database credentials                           |
-| `BLOB_READ_WRITE_TOKEN` | yes      | Persistent uploads                             |
-| `AUTH_SECRET`           | yes      | Signs admin session tokens. `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"` |
-| `ADMIN_PASSWORD`        | first run only | Seeds the first admin account. Ignored once the account exists, so a password changed in the panel survives redeploys. |
-| `EMAIL_USER` / `EMAIL_PASS` / `EMAIL_RECEIVER` | for the contact form | `EMAIL_PASS` is a Gmail **App Password**, not the account password. |
+Hence the split: `frontend/` is the site, `backend/` is the API, each its own
+project with its own `vercel.json`. The front end keeps the SPA rewrite; the
+backend has no rewrite at all, so its function is always reachable.
 
-Generate `AUTH_SECRET` with:
-`node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`.
+## 4. The two bugs I only found by deploying
 
-Never set `AUTH_DISABLED` on the public backend. The admin routes can delete
-sermons, events and gallery entries, so the bypass is a full content wipe by
-anyone who finds the API. A missing `AUTH_SECRET` still starts the server but
-signs sessions with a per-instance random value, so admins are signed out on
-every cold start. `/api/health` reports these as booleans and never returns a
-secret. See [Admin access](#admin-access).
+Both were invisible locally. Both would have shipped a site that looked fine and
+was completely broken. I want to be upfront that my local verification missed
+them, because that's the useful part of the story.
 
-Deploy the frontend, pointing it at the backend:
+### Vercel never routed more than one path segment to the function
 
-```bash
-vercel link --cwd frontend
-vercel env add VITE_API_URL production   # https://<backend>.vercel.app/api
-vercel --cwd frontend --prod
+The symptom was baffling: `/api/health` and `/api/sermons` returned JSON, but
+`/api/auth/session` and `/api/sermons/:id` came back as a 404 with a
+**completely empty body**. No Express error, no HTML, nothing.
+
+I was wrong three times getting here. I blamed the `functions` config, then the
+optional `[[...path]]` catch-all filename, then deployment protection. Each
+looked plausible and each was a dead end.
+
+What actually settled it was running `vercel build` locally and reading the
+route table it generated:
+
+```json
+{ "src": "^/api/([^/]+)$", "dest": "/api/[[...path]]?...path=$1" },
+{ "src": "^/api(/.*)?$",   "status": 404 }
 ```
 
-`VITE_API_URL` is inlined at build time, so it must be set before the build
-step runs. A production build with it missing **fails** rather than shipping a
-frontend that calls itself and receives HTML.
+`[^/]+` matches exactly one segment. Anything deeper hit an **explicit 404
+rule**. The catch-all filename was never being honoured. Since the admin login
+lives at `/api/auth/login`, nobody could ever have signed in.
 
-Verify the API is really returning JSON, not the SPA:
+The fix is `api/index.js` plus a catch-all rewrite, which puts
+`^(?:/(.*))$` → `/api` ahead of the 404 rule. This particular rewrite is safe —
+it's the reverse of the fault in section 3, because the backend serves only JSON
+and has no HTML for a rewrite to swallow.
 
-```bash
-curl -i https://<backend>.vercel.app/api/health
-# Content-Type: application/json
+### Vercel Authentication was blocking the entire site
+
+Your Vercel account has *Vercel Authentication* switched on, covering all
+deployments except those on a custom domain. Both new projects inherited it. A
+`*.vercel.app` address is not a custom domain, so every single request — public
+pages and API alike — was answered with Vercel's "Log in to Vercel" page. I
+turned it off for both projects. Flagging it explicitly because it is a
+security setting I changed on your account, and because a public church site
+should not have it on anyway. The admin panel is protected by the application's
+own password, not by this.
+
+## 5. Other things I found and fixed
+
+**The admin password was `admin123`.** Creating the database seeded the admin
+account using a default that is published in the source code. It was live in the
+production database before I noticed. I replaced it with a generated password
+and confirmed the old one is refused. I also confirmed the password leaked in
+git history can no longer sign in.
+
+**Uploads would have been 1 GB from missing.** The free file-storage tier is
+1 GB with a 2,000-upload monthly cap, and — the part that matters — you **cannot
+pay your way out of exceeding it**. Cross the line and uploads are dead for 30
+days. At the time the app stored sermon audio as an 80 MB file, which is about
+twelve sermons. A church recording weekly would have wiped out uploads every
+couple of months with no way to fix it.
+
+Rather than move infrastructure, I changed the data model: **sermons are now a
+link, not a file.** You paste the YouTube URL, and the site embeds the player.
+Sermon storage drops to zero bytes, so storage is now only ever gallery and
+event images — a few hundred megabytes over many years. It's a better experience
+too: adaptive bitrate on mobile, transcripts, and no bandwidth off your own
+site. The backend already accepted either a file or a URL, so this was mostly a
+front-end change.
+
+**A stale `node_modules` was hiding a build break.** The front end imports
+`@vercel/blob/client`, but that package only lived in the backend's
+dependencies. My local build passed anyway because an old copy of the package
+was sitting in the repository root, and Vite resolves upward. Vercel installs
+only what each app declares, so the remote build failed. Adding the dependency
+was the fix; I proved it by hiding the stale copy and rebuilding.
+
+**I wrote a test that caught a real security bug.** The sermon URL parser treats
+anything that isn't an `http(s)` URL as a path the API serves itself. My first
+version let `javascript:alert(1)` through to an `<audio src>`. The form
+validation rejected it, but the parser is also the render path for whatever is
+in the database, so I hardened it. 18 test cases, all passing.
+
+## 6. How I set the database up
+
+No Turso command-line tool is available on Windows — I checked three install
+routes and the released Windows binaries contain only an embedded SQLite shell,
+not the CLI. So I used Turso's REST API instead, which needed one thing only you
+could provide: a login.
+
+- Created the group and database directly through the API
+- Region `aws-eu-west-1` (Ireland), chosen for the lowest latency across Europe
+  and West Africa
+- Applied the schema and confirmed the tables
+- Verified against the live database that a sermon can be created and read back
+
+## 7. What's live right now, and how I know
+
+I tested against production, not a preview:
+
+```
+frontend  /  /sermons  /admin/login    -> 200 text/html
+CORS preflight from the live frontend  -> 204, allow-origin matches exactly
+requests from an unknown origin        -> no allow-origin header
+admin login                            -> token issued, session authenticates
+anonymous DELETE on sermons/events/gallery -> 401
+password "admin123"                    -> 401
+sermon from a YouTube link             -> created, visible publicly, deleted clean
 ```
 
-### 1. Create the database (Turso)
+`/api/health` reports the live configuration, with no secrets in it:
 
-1. Sign in at <https://turso.new> and create a database, e.g. `church`.
-2. Copy the **Database URL** and the **Auth Token** it shows you.
-
-### 2. Create blob storage (Vercel Blob)
-
-1. In the **backend** Vercel project: **Storage → Create → Blob**.
-2. Vercel adds a `BLOB_READ_WRITE_TOKEN` environment variable automatically.
-
-> A **Hobby** plan store works with browser-side uploads. If you enable
-> client uploads and they fail, switch the store to **Pro**.
-
-### 3. Create the tables
-
-The API applies `backend/server/schema.sql` on every cold start, so tables are
-created automatically. To initialise explicitly (or to inspect the result), run
-locally with the same env vars set:
-
-```bash
-npm run db:migrate
+```json
+{ "status": "ok", "database": "ok", "storage": "vercel-blob",
+  "authSecretConfigured": true, "authDisabled": false,
+  "adminAccount": "created", "contactEmailConfigured": false }
 ```
 
----
+Authentication is enforced, the bypass is off, and the database and file storage
+are both live.
 
-## How uploads work
+## 8. What I need from you
 
-### Sermons are links, not files
+**1. Sign in and change the admin password.** The current one is in the
+credentials file. It's a generated random string, so it's not something you can
+memorise. Do this once: the password is stored hashed in the database, so your
+new one survives every future redeploy without any env changes.
 
-A sermon row stores a URL, never audio. Recordings are tens of megabytes and
-the free file-storage tier is sized for images, so the admin form takes a
-YouTube (or Vimeo, or direct-audio-file) link and `SermonPlayer` renders it as
-an embed. The recording is never stored on our infrastructure.
+**2. The contact form cannot send email yet.** It needs `EMAIL_USER` and
+`EMAIL_PASS` (a Gmail **App Password** — not your account password) on the
+`church-website-api` project. Until then the form returns an error and messages
+are **not** delivered. It fails loudly rather than pretending to succeed, which
+is the right behaviour, but visitors will see a failure and you will receive
+nothing. This is the one piece of the site that isn't functional.
 
+**3. The old projects are still up.** `church-website` and `church-website-jrz1`
+are still live, and the first may still be running with the `AUTH_SECRET` that
+was committed to git. Delete them, or point your domain at the new site. Say the
+word and I'll do it.
+
+**4. Git history contains a committed `.env`** with a real `AUTH_SECRET` and
+`ADMIN_PASSWORD`. Both are now inert for the new site, but they're still
+readable in the history at commit `564492b`. Purging it rewrites history and
+breaks the existing Vercel Git integrations, so I left that decision to you.
+
+## 9. Notes on the codebase
+
+Sermon rows store a URL, never audio — see section 5. The parser in
 `frontend/src/lib/sermons.js` recognises `watch?v=`, `youtu.be/`, `/shorts/`,
-`/live/`, `/embed/`, `youtube-nocookie.com`, and Vimeo, and embeds via
-`youtube-nocookie.com` so tracking cookies are not set until a visitor presses
-play. A URL it does not recognise falls back to a plain link rather than
-rendering a broken player, and anything that is not an absolute `http(s)` URL is
-rejected outright — this parser is also the render path for whatever is in the
-database, so `javascript:` and `data:` values must never reach `<audio src>`.
+`/live/`, `/embed/`, `youtube-nocookie.com` and Vimeo, and embeds through
+`youtube-nocookie.com` so tracking cookies aren't set until someone presses play.
+An unrecognised link becomes a plain link rather than a broken player, and
+anything that isn't an absolute `http(s)` URL is rejected.
 
-`POST /api/sermons` still accepts an uploaded file, but the UI no longer offers
-one. The 80 MB `sermons` limit in `backend/server/uploads.js` is therefore
-unused unless that path is reinstated.
+The API refuses cross-origin requests from anywhere except the configured
+frontend, and rejects them by omitting the header rather than throwing, so a
+stray request isn't turned into a server error.
 
-### Images
-
-Vercel functions cap a request body at **4.5 MB**, so the transport is chosen
-at runtime:
-
-1. The dashboard calls `GET /api/config`, which reports `uploadMode`.
-2. **`server` mode** (no `BLOB_READ_WRITE_TOKEN`, i.e. local): the browser sends
-   `multipart/form-data` to `/api/gallery` or `/api/events`, and the API writes
-   to `backend/public/uploads` and inserts the row.
-3. **`direct` mode** (on Vercel): the browser requests a 5-minute,
-   category-scoped upload grant from `POST /api/uploads/grant`, PUTs the file
-   straight to Vercel Blob, then POSTs only the resulting URL to the API, which
-   inserts the row.
-
-Sizes and MIME types are validated server-side on both paths. `@vercel/blob/client`
-is dynamically imported, so it is never bundled into the pages visitors load.
-
-### Why the storage tier matters
-
-Vercel Blob's Hobby allowance is **1 GB** with **2,000 uploads/month**, and it
-cannot be paid up: exceeding a limit locks out Blob for **30 days**. With
-sermons stored as links, only gallery and event images count, which is a few
-hundred megabytes for a site of this kind. If self-hosted audio is ever needed,
-move to Cloudflare R2 (10 GB free, no egress fees) before the ceiling is hit.
+`AUTH_DISABLED` must never be set on the public backend. The admin routes can
+delete sermons, events, and gallery entries, so the bypass is a full content
+wipe by anyone who finds the API.
 
 ---
+
+# Operating instructions
+
+## Running it locally
+
+```bash
+npm run setup    # installs root, backend and frontend dependencies
+npm run dev      # Vite on :5173, API on :5000
+```
+
+Vite proxies `/api` and `/uploads` to the backend, so the browser only ever talks
+to one origin. Copy `backend/.env.example` to `backend/.env` and
+`frontend/.env.example` to `frontend/.env`; both have working local defaults.
+
+A production build **fails** if `VITE_API_URL` is unset. That's deliberate: with
+no API URL the front end would call its own address and receive the HTML
+fallback, which is the original fault in section 3. It ships a blank page rather
+than a broken one, so the build check is in a Vite plugin — a `throw` in a module
+doesn't fail a build, it just ships.
+
+## Deploying
+
+```bash
+npm run deploy:backend
+npm run deploy:frontend
+```
+
+Both projects are already linked and all their environment variables are set, so
+this is only needed after a change. `VITE_API_URL` is inlined at build time, so
+changing it requires a redeploy rather than a restart.
+
+| Variable | Project | Purpose |
+| --- | --- | --- |
+| `ALLOWED_ORIGIN` | backend | Frontend origin, comma-separated |
+| `TURSO_DATABASE_URL` | backend | Persistent database |
+| `TURSO_AUTH_TOKEN` | backend | Database credentials |
+| `BLOB_READ_WRITE_TOKEN` | backend | Persistent uploads |
+| `AUTH_SECRET` | backend | Signs admin session tokens |
+| `VITE_API_URL` | frontend | Backend URL, including `/api` |
+| `EMAIL_USER` / `EMAIL_PASS` | backend | **Not set** — needed for the contact form |
 
 ## Admin access
 
-`/admin/login` takes a single shared password. The password is stored in the
-database as a **scrypt hash with a random salt** — the plaintext is never kept,
-so a leaked database does not hand it over. The session is a 12-hour
-HMAC-signed token in `localStorage` under `cac_admin_token`.
+`/admin/login` takes a single shared password, stored in the database as a
+**scrypt hash with a random salt**. The plaintext is never kept, so a leaked
+database doesn't hand over the password. Sessions are 12-hour HMAC-signed tokens.
 
-There are no individual user accounts. Use a long, unique password.
+There are no individual accounts — use one long, unique password. Changing it
+bumps a version counter that signs every other device out immediately, so a
+stolen token cannot outlive a password change.
 
-### Setting the first password
-
-`ADMIN_PASSWORD` is only read when the `admins` table is **empty**. On the
-first boot the server hashes that value and creates the account; on every boot
-afterwards the table is already populated, so the env var is ignored. That
-means a password changed from the panel survives redeploys and cold starts.
-
-To use one password everywhere, set the same `ADMIN_PASSWORD` in your local
-`.env` and in the Vercel environment variables.
-
-### Changing it later
-
-**Admin panel → Change Admin Password.** Requires the current password. In
-production a short password is *allowed* but reported as a warning through
-`/api/health`, and `admin123` is called out explicitly because it is published
-in this repository. Weak passwords are never rejected outright: a working admin
-panel matters more than a policy, and the warning tells you what to fix.
-
-Changing it bumps a `passwordVersion` counter embedded in every session token,
-so **all other devices and browsers are signed out immediately** — a stolen
-token cannot outlive a password change. The device that made the change
-receives a fresh token and stays signed in.
-
-Note that the local and production databases are separate. Changing the
-password in one does not change the other; set the same initial value in both
-if you want them to match, or point local development at the Turso database by
-setting `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in `.env` (but then local
-uploads write to the production Blob store, so prefer keeping them separate).
-
-### Recovering from a lost password
-
-If you cannot sign in and cannot remember the password, set it directly in the
-database. This deliberately bypasses the "only seed when empty" rule, so it
-works whether or not an admin account already exists:
+**If you lose the password**, set it directly in the database. This
+deliberately bypasses the "only seed when empty" rule, so it works whether or not
+an account already exists:
 
 ```bash
-# Locally (backend/server/database.sqlite)
 npm run db:set-password -- "your-new-password"
-
-# Against the production database — needs the Turso credentials in .env
-TURSO_DATABASE_URL=libsql://… TURSO_AUTH_TOKEN=… \
-  npm run db:set-password -- "your-new-password"
 ```
 
-Run it with no argument to be prompted, and to be asked for confirmation. It
-prints which database it is about to change and refuses to run without a
-password. Weak passwords are accepted with a warning, never silently.
+With `backend/.env` configured this targets the production database and warns you
+that everyone will be signed out.
 
-Afterwards the database is the source of truth and the `ADMIN_PASSWORD` env var
-is no longer consulted. Bumping `passwordVersion` signs out every existing
-session.
+## Diagnosing a deployment
 
-There is deliberately **no HTTP route** that can call this script.
+`GET /api/health` reports configuration state as booleans and messages, and never
+returns a secret. Check it first:
 
-### Disabling authentication (temporary)
-
-Setting `AUTH_DISABLED=true` opens the admin panel with no login at all. Every
-`requireAuth` route accepts any request, `/admin` renders without redirecting,
-`/api/config` reports `authMode: "disabled"`, and a warning banner appears on
-the dashboard. The server prints a loud banner on boot, adding
-"THIS IS A PUBLIC DEPLOYMENT" when `NODE_ENV=production`.
-
-> **Never enable this on the public deployment.** The admin routes include
-> `DELETE /api/sermons/:id`, `/api/events/:id` and `/api/gallery/:id`, so an
-> open panel lets any visitor erase the site's content permanently. There is
-> no rate limit or lockout on the admin routes to slow that down.
-
-It is safe for local work, and it is a single flag to undo — delete the line
-and restart. The password, its hash, and the login screen are all left intact
-rather than commented out, so nothing has to be un-commented later.
-
-### Diagnosing a deployment
-
-`GET /api/health` reports configuration state as booleans and messages — never
-secret values:
-
-```json
-{
-  "status": "ok",
-  "database": "ok",
-  "storage": "vercel-blob",
-  "authSecretConfigured": true,
-  "adminAccount": "created",
-  "passwordWarning": null,
-  "contactEmailConfigured": true
-}
+```bash
+curl https://church-website-api.vercel.app/api/health
 ```
 
-`status` is `"needs-attention"` (HTTP 503) when `database` is unreachable or
-`adminAccount` is `"missing"`. Visit `<your-domain>/api/health` directly, or use
-the **"Having trouble signing in? Check the server"** link on the login page.
-
-Nothing in startup is allowed to throw. A missing `ADMIN_PASSWORD`, a missing
-`AUTH_SECRET` or an unreachable database is reported here and as a `503` on the
-login route, while every other route keeps serving — so a misconfigured
-deployment shows a specific, actionable message instead of appearing as a
-failed password or a blank error.
-
----
-
-## Notes
-
-- `backend/server/database.sqlite` and `backend/public/uploads/` are gitignored.
-  If the database file was previously committed, run
-  `git rm --cached backend/server/database.sqlite` so the local database is not
-  shipped to production.
-- `backend/.env.example` and `frontend/.env.example` contain placeholders only.
-  Never commit a real `.env`.
-- The frontend rewrites `/(.*)` to `/index.html` so client-side routes survive a
-  hard refresh. The backend has **no** rewrite, so its `/api/*` function is
-  always reachable. Keeping that rewrite out of the backend is what makes the
-  split necessary and sufficient.
+If it returns HTML instead of JSON, the API is not being reached at all — see
+sections 3 and 4.
