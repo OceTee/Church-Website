@@ -451,48 +451,88 @@ function escapeHtml(value) {
     );
 }
 
+// Bounds for an endpoint anyone on the internet can call. Without a cap this is
+// an open relay pointed at the church's Gmail, and it can also be used to burn
+// through the account's daily sending quota. 300/254/5000 comfortably covers a
+// real enquiry.
+const NAME_MAX = 300;
+const EMAIL_MAX = 254;
+const MESSAGE_MAX = 5000;
+
 app.post("/api/contact", async (req, res) => {
+    const { name, email, message } = req.body || {};
+
+    const senderName = typeof name === "string" ? name.trim() : "";
+    const senderEmail = typeof email === "string" ? email.trim() : "";
+    const body = typeof message === "string" ? message.trim() : "";
+
+    if (!senderName || !senderEmail || !body) {
+        return badRequest(res, "Name, email, and message are required.");
+    }
+
+    if (
+        senderName.length > NAME_MAX ||
+        senderEmail.length > EMAIL_MAX ||
+        body.length > MESSAGE_MAX
+    ) {
+        return badRequest(res, "That message is too long to send.");
+    }
+
+    const { EMAIL_USER, EMAIL_PASS, EMAIL_RECEIVER } = process.env;
+
+    if (!EMAIL_USER?.trim() || !EMAIL_PASS?.trim()) {
+        console.error(
+            "[contact] EMAIL_USER/EMAIL_PASS are not set. The contact form is " +
+                "disabled until they are configured -- see backend/.env.example."
+        );
+        // 503, not 500: nothing is broken, the feature simply is not switched on.
+        return res.status(503).json({
+            error: "The contact form is not available at the moment. Please email us directly.",
+        });
+    }
+
+    // A newline inside a header value is header injection. The subject and the
+    // display name are built from user input, so strip CR/LF before they reach
+    // the transport. Gmail app passwords are displayed in groups of four and
+    // usually get copied with the spaces still in them.
+    const headerName = senderName.replace(/[\r\n]+/g, " ").slice(0, 200);
+    const headerEmail = senderEmail.replace(/[\r\n]+/g, "").slice(0, EMAIL_MAX);
+    const appPassword = EMAIL_PASS.replace(/\s+/g, "");
+
     try {
-        const { name, email, message } = req.body || {};
-        if (!name || !email || !message) {
-            return badRequest(res, "Name, email, and message are required");
-        }
-
-        const { EMAIL_USER, EMAIL_PASS, EMAIL_RECEIVER } = process.env;
-
-        if (!EMAIL_USER || !EMAIL_PASS) {
-            console.error("[contact] Email credentials missing");
-            return res.status(500).json({ error: "Server email configuration is missing." });
-        }
-
         const { default: nodemailer } = await import("nodemailer");
 
         const transporter = nodemailer.createTransport({
             service: "gmail",
-            auth: { user: EMAIL_USER, pass: EMAIL_PASS },
+            auth: { user: EMAIL_USER.trim(), pass: appPassword },
         });
 
-        const safeName = escapeHtml(name);
-        const safeEmail = escapeHtml(email);
-        const safeMessage = escapeHtml(message).replace(/\n/g, "<br/>");
-
-        const mailOptions = {
-            from: `"CAC Possibility Website" <${EMAIL_USER}>`,
-            replyTo: email,
-            to: EMAIL_RECEIVER || EMAIL_USER,
-            subject: `New contact message from ${name}`.slice(0, 200),
-            text: `New message from the website contact form:\n\nName: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
+        await transporter.sendMail({
+            from: `"CAC Possibility Website" <${EMAIL_USER.trim()}>`,
+            replyTo: headerEmail,
+            to: (EMAIL_RECEIVER || EMAIL_USER).trim(),
+            subject: `New contact message from ${headerName}`,
+            text: `New message from the website contact form:\n\nName: ${senderName}\nEmail: ${senderEmail}\n\nMessage:\n${body}`,
+            // Escaped: this body is attacker-controlled and lands in a mailbox.
             html: `<p>New message from the website contact form:</p>
-                   <p><strong>Name:</strong> ${safeName}<br/>
-                   <strong>Email:</strong> ${safeEmail}</p>
+                   <p><strong>Name:</strong> ${escapeHtml(senderName)}<br/>
+                   <strong>Email:</strong> ${escapeHtml(senderEmail)}</p>
                    <p><strong>Message:</strong></p>
-                   <p>${safeMessage}</p>`,
-        };
+                   <p>${escapeHtml(body).replace(/\n/g, "<br/>")}</p>`,
+        });
 
-        await transporter.sendMail(mailOptions);
-        res.json({ message: "Email sent successfully" });
+        res.json({ message: "Thanks — your message has been sent." });
     } catch (err) {
-        serverError(res, err);
+        // Nearly always a credential problem: 2FA not enabled, app password
+        // revoked or mistyped, quota exhausted. Log the code so it is
+        // diagnosable from the Vercel logs, but do not hand SMTP detail to the
+        // sender.
+        console.error(
+            `[contact] send failed: code=${err?.code ?? "?"} status=${err?.responseCode ?? "?"} ${err?.message ?? ""}`.trim()
+        );
+        res.status(502).json({
+            error: "Your message could not be sent just now. Please try again, or email us directly.",
+        });
     }
 });
 
