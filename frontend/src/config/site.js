@@ -18,8 +18,8 @@ export const site = {
   },
   // TODO: replace with the real giving account details.
   giving: {
-    accountNumber: "XXXXXXXX",
-    accountName: "XXXXXX",
+    accountNumber: "0094737421",
+    accountName: "CAC POSSIBILITY ASSEMBLY",
     bank: "Access Bank PLC",
   },
   serviceTimes: [
@@ -34,14 +34,14 @@ export const site = {
   ],
   // TODO: replace with the real contact details.
   contact: {
-    email: "taoladoja011203@gmail.com",
-    phone: "+234 807 686 3599",
+    email: "cacpossibilityassembly@gmail.com",
+    phone: "+234 xxx xxx xxxx",
   },
   // TODO: replace href values with the real profile URLs. They currently
   // point at the internal Connect page so every link resolves.
   socials: [
     { label: "Website", icon: "globe", href: "/" },
-    { label: "Telegram", icon: "send", href: "/connect" },
+    { label: "Telegram", icon: "send", href: "https://t.me/PossibilityAssemblyMedia" },
     { label: "WhatsApp", icon: "message-circle", href: "/connect" },
     { label: "Instagram", icon: "camera", href: "/connect" },
     { label: "TikTok", icon: "music", href: "/connect" },
