@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/Inter_18pt-Regular.ttf");
+}
+
+@font-face {
+    font-family: "PlayfairDisplay";
+    src: url(/fonts/PlayfairDisplay-Regular.ttf);
+}
+
+@theme {
+    --font-inter: "Inter", sans-serif;
+    --font-playfair: "PlayfairDisplay", sans-serif;
+    
+    /* Golden Ratio Typography Base 16px (1rem) */
+    --text-gr-base: 1rem;       /* 16px */
+    --text-gr-md: 1.25rem;      /* 20px */
+    --text-gr-lg: 1.618rem;     /* ~26px */
+    --text-gr-xl: 2.618rem;     /* ~42px */
+    --text-gr-2xl: 4.236rem;    /* ~68px */
+}

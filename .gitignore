@@ -7,10 +7,26 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies (each app installs its own)
 node_modules
 dist
 dist-ssr
 *.local
+
+# Secrets — never commit real credentials
+.env
+.env.*
+!.env.example
+
+# Vercel
+.vercel
+
+# Local-only data: uploads and the database fall back to the filesystem when
+# the Turso / Vercel Blob env vars are absent.
+public/uploads/
+frontend/public/uploads/
+backend/server/database.sqlite
+backend/server/database.sqlite-journal
 
 # Editor directories and files
 .vscode/*

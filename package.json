@@ -1,32 +1,32 @@
 {
-  "name": "tim-church-proj",
+  "name": "church-website",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+  "description": "Monorepo root: orchestrates the two independently deployable apps.",
+  "engines": {
+    "node": ">=20"
   },
-  "dependencies": {
-    "@tailwindcss/vite": "^4.3.3",
-    "lucide-react": "^1.27.0",
-    "motion": "^12.42.2",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "react-router-dom": "^7.11.0",
-    "tailwindcss": "^4.3.3"
+  "scripts": {
+    "setup": "npm --prefix backend install && npm --prefix frontend install",
+    "dev": "concurrently -n api,web -c magenta,cyan \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "preview": "npm --prefix frontend run preview",
+    "db:migrate": "npm --prefix backend run db:migrate",
+    "db:set-password": "npm --prefix backend run db:set-password",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "deploy:backend": "vercel --cwd backend --prod",
+    "deploy:frontend": "vercel --cwd frontend --prod"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.4",
+    "concurrently": "^10.0.5",
     "eslint": "^10.8.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.3",
-    "globals": "^17.7.0",
-    "vite": "^8.1.5"
+    "globals": "^17.7.0"
   }
 }
