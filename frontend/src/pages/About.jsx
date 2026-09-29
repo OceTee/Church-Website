@@ -28,7 +28,7 @@ export default function About() {
           <div className="grid gap-8 md:grid-cols-2">
             <div>
               <h3 className="mb-4 font-playfair text-xl font-semibold md:text-2xl">
-                Mission
+                Church Mission
               </h3>
               <p className="font-inter text-base leading-relaxed text-gray-200">
                 [Placeholder text: "To love God, love people, and make
