@@ -1,4 +1,4 @@
-import { assetUrl } from "../lib/api";
+import SermonPlayer from "./SermonPlayer";
 
 export default function MiniSermon({ type, title, date, audioUrl }) {
   return (
@@ -10,12 +10,7 @@ export default function MiniSermon({ type, title, date, audioUrl }) {
         {title}
       </h2>
       <p className="font-inter text-sm text-gray-500 md:text-base">{date}</p>
-      {audioUrl && (
-        <audio controls preload="none" className="mt-2 h-10 w-full">
-          <source src={assetUrl(audioUrl)} type="audio/mpeg" />
-          Your browser does not support the audio element.
-        </audio>
-      )}
+      {audioUrl && <SermonPlayer url={audioUrl} />}
     </article>
   );
 }

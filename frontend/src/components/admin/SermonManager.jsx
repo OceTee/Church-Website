@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
-import { apiFetch, assetUrl } from "../../lib/api";
-import { createWithUpload } from "../../lib/uploads";
+import { apiFetch } from "../../lib/api";
+import {
+  createSermon,
+  describeSermonSource,
+  isValidSermonUrl,
+} from "../../lib/sermons";
+import SermonPlayer from "../SermonPlayer";
 import {
   cardClass,
   sectionTitleClass,
@@ -12,7 +17,7 @@ import {
   listRowClass,
 } from "./fieldStyles";
 
-const EMPTY_FORM = { title: "", date: "", file: null };
+const EMPTY_FORM = { title: "", date: "", url: "" };
 
 export default function SermonManager({ sermons, onChanged, onError }) {
   const [form, setForm] = useState(EMPTY_FORM);
@@ -20,19 +25,16 @@ export default function SermonManager({ sermons, onChanged, onError }) {
 
   const update = (key, value) => setForm((current) => ({ ...current, [key]: value }));
 
+  const urlLooksValid = form.url.trim() === "" || isValidSermonUrl(form.url);
+  const detected = urlLooksValid ? describeSermonSource(form.url) : null;
+
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!form.file) return;
+    if (!isValidSermonUrl(form.url)) return;
 
     setBusy(true);
     try {
-      await createWithUpload({
-        category: "sermons",
-        file: form.file,
-        fields: { title: form.title, date: form.date },
-      });
-
-      event.target.reset();
+      await createSermon({ title: form.title, date: form.date, url: form.url });
       setForm(EMPTY_FORM);
       await onChanged();
     } catch (error) {
@@ -85,33 +87,45 @@ export default function SermonManager({ sermons, onChanged, onError }) {
             />
           </div>
           <div>
-            <label className={labelClass} htmlFor="sermon-file">
-              Audio File
+            <label className={labelClass} htmlFor="sermon-url">
+              Sermon Link
             </label>
             <input
-              id="sermon-file"
-              type="file"
-              accept="audio/*"
+              id="sermon-url"
+              type="url"
+              inputMode="url"
+              className={inputClass}
               required
-              onChange={(event) => update("file", event.target.files[0] || null)}
-              className="font-inter text-sm"
+              value={form.url}
+              onChange={(event) => update("url", event.target.value)}
+              placeholder="https://www.youtube.com/watch?v=..."
             />
           </div>
         </div>
+        <p className="font-inter text-sm text-gray-500">
+          {detected ? (
+            <>
+              Recognised as{" "}
+              <span className="font-semibold text-gray-700">{detected}</span>.
+            </>
+          ) : (
+            "Paste the YouTube link for the recording. A direct audio file link also works."
+          )}
+        </p>
         <button
           type="submit"
-          disabled={busy}
+          disabled={busy || !urlLooksValid}
           className={`${primaryButtonClass} self-start`}
         >
-          {busy ? "Uploading..." : "Upload Sermon"}
+          {busy ? "Saving..." : "Add Sermon"}
         </button>
       </form>
 
       <h3 className="mb-4 border-b pb-2 font-inter font-semibold text-gray-700">
-        Uploaded Sermons
+        Sermons
       </h3>
       {sermons.length === 0 ? (
-        <p className="font-inter italic text-gray-400">No sermons uploaded.</p>
+        <p className="font-inter italic text-gray-400">No sermons added yet.</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {sermons.map((sermon) => (
@@ -121,9 +135,7 @@ export default function SermonManager({ sermons, onChanged, onError }) {
                   {sermon.title}
                 </h4>
                 <p className="font-inter text-sm text-gray-500">{sermon.date}</p>
-                <audio controls preload="none" className="mt-2 h-8 w-full max-w-xs">
-                  <source src={assetUrl(sermon.audioUrl)} type="audio/mpeg" />
-                </audio>
+                <SermonPlayer url={sermon.audioUrl} />
               </div>
               <button
                 type="button"

@@ -143,13 +143,34 @@ npm run db:migrate
 
 ## How uploads work
 
-Vercel functions cap a request body at **4.5 MB**, which is far below the 80 MB
-sermon-audio limit. So the transport is chosen at runtime:
+### Sermons are links, not files
+
+A sermon row stores a URL, never audio. Recordings are tens of megabytes and
+the free file-storage tier is sized for images, so the admin form takes a
+YouTube (or Vimeo, or direct-audio-file) link and `SermonPlayer` renders it as
+an embed. The recording is never stored on our infrastructure.
+
+`frontend/src/lib/sermons.js` recognises `watch?v=`, `youtu.be/`, `/shorts/`,
+`/live/`, `/embed/`, `youtube-nocookie.com`, and Vimeo, and embeds via
+`youtube-nocookie.com` so tracking cookies are not set until a visitor presses
+play. A URL it does not recognise falls back to a plain link rather than
+rendering a broken player, and anything that is not an absolute `http(s)` URL is
+rejected outright — this parser is also the render path for whatever is in the
+database, so `javascript:` and `data:` values must never reach `<audio src>`.
+
+`POST /api/sermons` still accepts an uploaded file, but the UI no longer offers
+one. The 80 MB `sermons` limit in `backend/server/uploads.js` is therefore
+unused unless that path is reinstated.
+
+### Images
+
+Vercel functions cap a request body at **4.5 MB**, so the transport is chosen
+at runtime:
 
 1. The dashboard calls `GET /api/config`, which reports `uploadMode`.
 2. **`server` mode** (no `BLOB_READ_WRITE_TOKEN`, i.e. local): the browser sends
-   `multipart/form-data` to `/api/gallery`, `/api/events` or `/api/sermons`, and
-   the API writes to `public/uploads` and inserts the row.
+   `multipart/form-data` to `/api/gallery` or `/api/events`, and the API writes
+   to `backend/public/uploads` and inserts the row.
 3. **`direct` mode** (on Vercel): the browser requests a 5-minute,
    category-scoped upload grant from `POST /api/uploads/grant`, PUTs the file
    straight to Vercel Blob, then POSTs only the resulting URL to the API, which
@@ -157,6 +178,14 @@ sermon-audio limit. So the transport is chosen at runtime:
 
 Sizes and MIME types are validated server-side on both paths. `@vercel/blob/client`
 is dynamically imported, so it is never bundled into the pages visitors load.
+
+### Why the storage tier matters
+
+Vercel Blob's Hobby allowance is **1 GB** with **2,000 uploads/month**, and it
+cannot be paid up: exceeding a limit locks out Blob for **30 days**. With
+sermons stored as links, only gallery and event images count, which is a few
+hundred megabytes for a site of this kind. If self-hosted audio is ever needed,
+move to Cloudflare R2 (10 GB free, no egress fees) before the ceiling is hit.
 
 ---
 
