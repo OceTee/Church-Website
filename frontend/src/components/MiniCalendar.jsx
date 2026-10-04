@@ -1,20 +1,38 @@
+import { useState, useEffect } from "react";
 import { assetUrl } from "../lib/api";
 
-// Photo-first, text overlaid, in the same language as the hero: a large image
-// with the title, description and date drawn on top.
+// Photo-first, text overlaid, maintaining the image's natural aspect ratio
 export default function MiniCalendar({ title, sub, date, time, flyerUrl }) {
+  const [aspectRatio, setAspectRatio] = useState(null);
+
+  useEffect(() => {
+    if (!flyerUrl) return;
+    const img = new Image();
+    img.src = assetUrl(flyerUrl);
+    img.onload = () => {
+      if (img.naturalWidth && img.naturalHeight) {
+        setAspectRatio(img.naturalWidth / img.naturalHeight);
+      }
+    };
+    img.onerror = () => {
+      // Image failed to load, aspectRatio stays null
+    };
+  }, [flyerUrl]);
+
+  const aspectStyle = aspectRatio ? { aspectRatio: aspectRatio } : {};
+
   return (
-    <article className="relative flex h-64 w-full overflow-hidden rounded-xl shadow-md md:h-72">
-      {flyerUrl ? (
-        <img
-          src={assetUrl(flyerUrl)}
-          alt=""
-          loading="lazy"
-          className="h-full w-full object-cover"
-        />
-      ) : (
-        <div className="h-full w-full bg-gradient-to-br from-[#65007f] to-[#3a0030]" />
-      )}
+    <article className="relative w-full overflow-hidden rounded-xl shadow-md bg-black" style={aspectStyle}>
+      <img
+        src={assetUrl(flyerUrl)}
+        alt=""
+        loading="lazy"
+        className="h-full w-full object-cover"
+        onError={(e) => {
+          e.currentTarget.style.display = "none";
+        }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-br from-[#65007f] to-[#3a0030]" />
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/10" />
 
