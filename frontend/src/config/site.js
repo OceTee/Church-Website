@@ -43,9 +43,10 @@ export const site = {
   // TODO: replace href values with the real profile URLs. They currently
   // point at the internal Connect page so every link resolves.
   socials: [
-    { label: "Website", icon: "globe", href: "/" },
-    { label: "Telegram", icon: "send", href: "https://t.me/PossibilityAssemblyMedia" },
-    { label: "WhatsApp", icon: "message-circle", href: "/connect" },
+    { label: "CAC Possibility Assembly", icon: "globe", href: "/" },
+    { label: "Generational Blessing Mandate", icon: "send", href: "https://t.me/PossibilityAssemblyMedia" },
+    { label: "Possibility Assembly Nation Messages", icon: "send", href: "https://t.me/PossibilityAssemblyNation" },
+    { label: "Possibility Members", icon: "message-circle", href: "https://chat.whatsapp.com/FHGa9V7QRV09yA8vG2vUKO" },
     { label: "Instagram", icon: "camera", href: "/connect" },
     { label: "TikTok", icon: "music", href: "/connect" },
   ],

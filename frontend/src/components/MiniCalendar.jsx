@@ -1,6 +1,16 @@
-export default function MiniCalendar({ title, sub, date, time }) {
+import { assetUrl } from "../lib/api";
+
+export default function MiniCalendar({ title, sub, date, time, flyerUrl }) {
   return (
     <div className="mb-4 flex flex-col justify-between gap-4 rounded-xl border border-[#65007f]/30 bg-white p-5 shadow-sm md:flex-row md:items-center">
+      {flyerUrl && (
+        <img
+          src={assetUrl(flyerUrl)}
+          alt={`Flyer for ${title}`}
+          loading="lazy"
+          className="h-24 w-24 shrink-0 rounded-lg object-cover shadow-sm"
+        />
+      )}
       <div className="min-w-0">
         <h2 className="font-playfair text-xl font-semibold text-[#330040] md:text-2xl">
           {title}

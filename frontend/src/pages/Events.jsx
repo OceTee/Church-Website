@@ -51,6 +51,7 @@ export default function Events() {
                 sub={event.description}
                 date={event.date}
                 time={event.time}
+                flyerUrl={event.flyerUrl}
               />
             ))}
           </div>
