@@ -23,25 +23,23 @@ export default function About() {
 
         <section className="rounded-2xl bg-[#65007f] p-6 text-white shadow-md sm:p-10">
           <h2 className="mb-6 font-playfair text-2xl font-bold text-[#ffd700] md:text-3xl">
-            Our Mission & Vision
+            MAIN PURPOSE
           </h2>
           <div className="grid gap-8 md:grid-cols-2">
             <div>
               <h3 className="mb-4 font-playfair text-xl font-semibold md:text-2xl">
-                Church Mission
+                Spiritual PURPOSE:
               </h3>
               <p className="font-inter text-base leading-relaxed text-gray-200">
-                [Placeholder text: "To love God, love people, and make
-                disciples." Describe the core mission of your church here.]
+                 To share Christian teachings, Healing and Miracle crusade and support people's faith growth in Christ Jesus.
               </p>
             </div>
             <div>
               <h3 className="mb-4 font-playfair text-xl font-semibold md:text-2xl">
-                Vision
+                Helping the Poor and less privileged:
               </h3>
               <p className="font-inter text-base leading-relaxed text-gray-200">
-                [Placeholder text: "To be a beacon of hope and a center for
-                community transformation." Describe the long-term vision here.]
+                  Medical outreach for community, sch scholarship, business and entrepreneurs empowerment. To provide food, shelter, and support  people who are struggling or homeless.
               </p>
             </div>
           </div>

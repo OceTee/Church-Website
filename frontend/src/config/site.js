@@ -35,7 +35,7 @@ export const site = {
   // TODO: replace with the real contact details.
   contact: {
     email: "cacpossibilityassembly@gmail.com",
-    phone: "+234 xxx xxx xxxx",
+    phone: "+44 7549 041124",
   },
   // TODO: replace href values with the real profile URLs. They currently
   // point at the internal Connect page so every link resolves.
