@@ -12,9 +12,9 @@ export const site = {
   },
   // TODO: replace with the real YouTube channel and handle.
   youtube: {
-    channelId: "CHANNEL_ID",
-    handle: "@YourChannel",
-    url: "https://www.youtube.com/@YourChannel",
+    channelId: "UCtVJZfShbwIz2dUNgcvIA0g",
+    handle: "@cacpossibilityassembly881",
+    url: "https://youtube.com/@cacpossibilityassembly881?si=s1hx-j8EZb8nb9ei",
   },
   // TODO: replace with the real giving account details.
   giving: {
