@@ -73,12 +73,17 @@ export default function Footer() {
               {site.address.area}
               <br />
               {site.address.city}
+              <br />
+              <br />
+              {site.address.street2}
+              <br />
+              {site.address.area2}
             </address>
           </div>
         </div>
 
         <p className="border-t border-white/10 pt-6 text-xs text-gray-400">
-          &copy; {new Date().getFullYear()} {site.name}. All rights reserved.
+          &copy; {new Date().getFullYear()} Kretim Studios - {site.name}. All rights reserved.
         </p>
       </div>
     </footer>

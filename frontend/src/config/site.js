@@ -27,7 +27,7 @@ export const site = {
   serviceTimes: [
     {
       day: "Sunday",
-      details: ["First Service • 8:00 AM", "Second Service • 10:00 AM, UK Service • 2:00 PM"],
+      details: ["First Service • 8:00 AM", "Second Service • 10:00 AM", "UK Service • 2:00 PM"],
     },
     {
       day: "Wednesday",
@@ -38,6 +38,7 @@ export const site = {
   contact: {
     email: "cacpossibilityassembly@gmail.com",
     phone: "+44 7549 041124",
+    phone2: "+234 803 835 0175",
   },
   // TODO: replace href values with the real profile URLs. They currently
   // point at the internal Connect page so every link resolves.

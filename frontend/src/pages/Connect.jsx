@@ -58,6 +58,11 @@ export default function Connect() {
               {site.address.area}
               <br />
               {site.address.city}
+              <br />
+              <br />
+              {site.address.street2}
+              <br />
+              {site.address.area2}
             </p>
           </div>
 
@@ -84,6 +89,12 @@ export default function Connect() {
               className="font-inter text-sm text-gray-600 hover:text-[#65007f]"
             >
               {site.contact.phone}
+            </a>
+            <a
+              href={`tel:${site.contact.phone2.replace(/\s/g, "")}`}
+              className="font-inter text-sm text-gray-600 hover:text-[#65007f]"
+            >
+              {site.contact.phone2}
             </a>
           </div>
         </div>
