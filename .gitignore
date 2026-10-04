@@ -38,3 +38,6 @@ backend/server/database.sqlite-journal
 *.njsproj
 *.sln
 *.sw?
+
+.vercel
+.env*

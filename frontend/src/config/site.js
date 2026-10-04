@@ -9,6 +9,8 @@ export const site = {
     street: "3 Fatokun Street, Oremeta,",
     area: "Aba Apanu, Ologuneru Road,",
     city: "Ibadan.",
+    street2: "116 Coldyhill Lane Scarborough,UK.",
+    area2: "YO12 6SD."
   },
   // TODO: replace with the real YouTube channel and handle.
   youtube: {
@@ -25,11 +27,11 @@ export const site = {
   serviceTimes: [
     {
       day: "Sunday",
-      details: ["First Service • 8:00 AM", "Second Service • 10:00 AM"],
+      details: ["First Service • 8:00 AM", "Second Service • 10:00 AM, UK Service • 2:00 PM"],
     },
     {
       day: "Wednesday",
-      details: ["Global Bible Study • 5:30 PM"],
+      details: ["Mid Week Service • 5:30 PM", "Global Bible Study • 8:00 PM"],
     },
   ],
   // TODO: replace with the real contact details.
@@ -49,3 +51,5 @@ export const site = {
 };
 
 export const addressLine = `${site.address.street} ${site.address.area} ${site.address.city}`;
+export const addressLine2 = `${site.address.street2} ${site.address.area2}`;
+
