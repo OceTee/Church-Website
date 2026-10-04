@@ -47,7 +47,7 @@ export default function Landing() {
 
   return (
     <div className="flex flex-col items-center">
-      <Hero />
+      <Hero events={events} />
 
       <div className="w-[90%] max-w-5xl">
         <ServiceSchedule />
