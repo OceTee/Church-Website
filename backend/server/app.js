@@ -219,30 +219,32 @@ app.post("/api/blob-upload", async (req, res) => {
         return badRequest(res, "Direct uploads are only available on Vercel Blob storage.");
     }
 
+    // The Vercel Blob client talks to this endpoint using an event envelope,
+    // never a plain form body:
+    //   { type: "blob.generate-client-token", payload: { pathname, clientPayload } }
+    //   { type: "blob.upload-completed",    payload: { ... } }
+    // Anything else is not a valid upload request.
     const body = req.body || {};
-    const category = String(body.category || "");
-
-    if (!isValidCategory(category)) {
-        return badRequest(res, "Unknown upload category.");
-    }
-
-    const header = req.headers.authorization || "";
-    const bearer = header.startsWith("Bearer ") ? header.slice(7) : null;
-
-    const authorized =
-        verifyToken(bearer) || verifyUploadGrant(String(req.query.grant || ""), category);
-
-    if (!authorized) {
-        return res.status(401).json({ error: "Authentication required" });
-    }
-
-    const problem = validateUploadMeta(category, body.meta || {});
-    if (problem) {
-        return badRequest(res, problem);
+    const type = body.type;
+    if (type !== "blob.generate-client-token" && type !== "blob.upload-completed") {
+        return res.status(400).json({ error: "Invalid upload request." });
     }
 
     try {
-        const { handleUpload } = await import("@vercel/blob/client");
+        // The blob client cannot send the admin bearer token, so the dashboard
+        // first exchanges its session for a short-lived single-category grant
+        // and passes it as a query parameter instead.
+        if (type === "blob.generate-client-token") {
+            const category = body.payload?.clientPayload?.category;
+            const header = req.headers.authorization || "";
+            const bearer = header.startsWith("Bearer ") ? header.slice(7) : null;
+            const grant = String(req.query.grant || "");
+            const authorized =
+                verifyToken(bearer) || (grant ? verifyUploadGrant(grant, category) : null);
+            if (!authorized) {
+                return res.status(401).json({ error: "Authentication required" });
+            }
+        }
 
         const request = new Request(`https://${req.headers.host}${req.originalUrl}`, {
             method: "POST",
@@ -250,18 +252,27 @@ app.post("/api/blob-upload", async (req, res) => {
             body: JSON.stringify(body),
         });
 
-        const response = await handleUpload({
+        const { handleUpload } = await import("@vercel/blob/client");
+
+        const result = await handleUpload({
             body,
             request,
-            onBeforeGenerateToken: async () => ({
-                ...uploadLimits(category),
-                addRandomSuffix: true,
-            }),
+            onBeforeGenerateToken: async (pathname, clientPayload) => {
+                const category = clientPayload?.category;
+                if (!isValidCategory(category)) {
+                    throw new Error("Unknown upload category.");
+                }
+                return {
+                    addRandomSuffix: false,
+                    ...uploadLimits(category),
+                };
+            },
             onUploadCompleted: async () => {},
         });
 
-        res.status(response.status);
-        res.type("application/json").send(await response.text());
+        // handleUpload returns a plain object ({ type, clientToken } or
+        // { type, response: "ok" }), not a Response, so send it directly.
+        res.type("application/json").send(JSON.stringify(result));
     } catch (error) {
         serverError(res, error);
     }
@@ -283,11 +294,15 @@ app.post(
     galleryUpload.single(GALLERY_FIELD),
     async (req, res) => {
         try {
-            if (!req.file) return badRequest(res, "No image uploaded");
-
             const { date, imageUrl: existingUrl } = req.body || {};
 
-            // The browser may have uploaded straight to blob already.
+            // The browser may have uploaded straight to blob already, in which
+            // case the dashboard sends a JSON body with the URL and no file.
+            // Accept either, but never insert without an image.
+            if (!req.file && !existingUrl) {
+                return badRequest(res, "No image uploaded");
+            }
+
             const imageUrl = existingUrl || (await storeUpload("gallery", req.file));
             const photoDate = date || new Date().toISOString().split("T")[0];
 

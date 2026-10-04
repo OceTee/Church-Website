@@ -18,8 +18,8 @@
     "db:set-password": "npm --prefix backend run db:set-password",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "deploy:backend": "vercel --cwd backend --prod",
-    "deploy:frontend": "vercel --cwd frontend --prod"
+    "deploy:backend": "vercel link --project church-website-api --yes && vercel deploy --prod --yes",
+    "deploy:frontend": "vercel link --project church-website-web --yes && vercel deploy --prod --yes"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
