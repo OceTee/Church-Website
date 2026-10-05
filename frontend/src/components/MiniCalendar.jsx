@@ -4,6 +4,7 @@ import { assetUrl } from "../lib/api";
 // Photo-first, text overlaid, maintaining the image's natural aspect ratio
 export default function MiniCalendar({ title, sub, date, time, flyerUrl }) {
   const [aspectRatio, setAspectRatio] = useState(null);
+  const [imageError, setImageError] = useState(false);
   const imgRef = useRef(null);
 
   useEffect(() => {
@@ -26,7 +27,7 @@ export default function MiniCalendar({ title, sub, date, time, flyerUrl }) {
     <article className="relative w-full overflow-hidden rounded-xl shadow-md bg-black" style={aspectStyle}>
       {/* Background image layer - at the very back */}
       <div className="relative w-full h-full" style={{ zIndex: 0 }}>
-        {flyerUrl && (
+        {flyerUrl && !imageError && (
           <img
             ref={imgRef}
             src={assetUrl(flyerUrl)}
@@ -34,17 +35,14 @@ export default function MiniCalendar({ title, sub, date, time, flyerUrl }) {
             loading="lazy"
             className="absolute inset-0 h-full w-full object-cover"
             style={{ zIndex: 0, opacity: 1 }}
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-            }}
+            onError={() => setImageError(true)}
             onLoad={() => {}}
           />
         )}
         {/* Fallback gradient when no image or error */}
         <div
           className="absolute inset-0 h-full w-full bg-gradient-to-br from-[#65007f] to-[#3a0030]"
-          style={{ zIndex: 0, display: 'none' }}
-          data-fallback
+          style={{ zIndex: 0, display: imageError || !flyerUrl ? 'block' : 'none' }}
         />
       </div>
 
