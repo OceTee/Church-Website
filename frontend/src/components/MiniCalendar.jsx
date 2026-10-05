@@ -46,8 +46,8 @@ export default function MiniCalendar({ title, sub, date, time, flyerUrl }) {
         />
       </div>
 
-      {/* Subtle gradient overlay for text readability - only at bottom */}
-      <div className="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-black/60" style={{ zIndex: 10 }} />
+      {/* Gradient overlay for text readability - full coverage with fade from bottom */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" style={{ zIndex: 10 }} />
 
       {/* Content layer - all text at the bottom, yellow badge top-right */}
       <div className="relative flex h-full flex-col justify-end p-5" style={{ zIndex: 20 }}>
@@ -59,9 +59,9 @@ export default function MiniCalendar({ title, sub, date, time, flyerUrl }) {
           </div>
         </div>
 
-        {/* Bottom - all text content stacked */}
+        {/* Bottom - all text content stacked with proper alignment */}
         <div className="flex flex-col items-center gap-3 text-center px-4 pb-2">
-          {/* Title */}
+          {/* Title - centered, prominent */}
           <h2 className="font-playfair text-xl font-bold leading-tight text-white md:text-2xl lg:text-3xl">
             {title}
           </h2>
