@@ -41,30 +41,31 @@ export default function MiniCalendar({ title, sub, date, time, flyerUrl }) {
       {/* Dark gradient overlay for text readability */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/10" style={{ zIndex: 10 }} />
 
-      {/* Content layer - text and highlights on top */}
-      <div className="relative flex h-full flex-col justify-between p-5" style={{ zIndex: 20 }}>
-        {/* Top section - yellow date badge only (top right) */}
-        <div className="flex justify-end">
+      {/* Content layer - all text at the bottom, yellow badge top-right */}
+      <div className="relative flex h-full flex-col justify-end p-5" style={{ zIndex: 20 }}>
+        {/* Top right - yellow date badge only */}
+        <div className="flex justify-end mb-auto">
           <div className="shrink-0 rounded-lg bg-[#ffd700] px-3 py-1.5 text-center">
             <p className="font-inter text-xs font-bold leading-tight text-black">{date}</p>
             <p className="font-inter text-[10px] font-medium text-black/70">{time || "Event"}</p>
           </div>
         </div>
 
-        {/* Center - Title */}
-        <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
+        {/* Bottom - all text content stacked */}
+        <div className="flex flex-col items-center gap-3 text-center px-4 pb-2">
+          {/* Title */}
           <h2 className="font-playfair text-xl font-bold leading-tight text-white md:text-2xl lg:text-3xl">
             {title}
           </h2>
-        </div>
 
-        {/* Bottom - Description and date/time */}
-        <div className="flex flex-col items-center gap-2 text-center">
+          {/* Description */}
           {sub && (
             <p className="max-w-[85%] font-inter text-sm leading-snug text-white/90 md:text-base">
               {sub}
             </p>
           )}
+
+          {/* Date and time at the very bottom */}
           <div className="flex items-center justify-center gap-3 text-white/90">
             <span className="font-inter text-sm">{date}</span>
             {time && <span className="text-white/70">{time}</span>}
