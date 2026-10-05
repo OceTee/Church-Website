@@ -4,7 +4,6 @@ import { assetUrl } from "../lib/api";
 // Photo-first, text overlaid, maintaining the image's natural aspect ratio
 export default function MiniCalendar({ title, sub, date, time, flyerUrl }) {
   const [aspectRatio, setAspectRatio] = useState(null);
-  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     if (!flyerUrl) return;
@@ -25,18 +24,13 @@ export default function MiniCalendar({ title, sub, date, time, flyerUrl }) {
   return (
     <article className="relative w-full overflow-hidden rounded-xl shadow-md bg-black" style={aspectStyle}>
       {/* Background image layer - at the very back */}
-      {!imageError && flyerUrl ? (
-        <img
-          src={assetUrl(flyerUrl)}
-          alt=""
-          loading="lazy"
-          className="absolute inset-0 h-full w-full object-cover"
-          style={{ zIndex: 0 }}
-          onError={() => setImageError(true)}
-        />
-      ) : (
-        <div className="absolute inset-0 h-full w-full bg-gradient-to-br from-[#65007f] to-[#3a0030]" style={{ zIndex: 0 }} />
-      )}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          zIndex: 0,
+          backgroundImage: `linear-gradient(rgba(10, 4, 20, 0.86), rgba(10, 4, 20, 0.62), rgba(10, 4, 20, 0.88)), url('${flyerUrl ? assetUrl(flyerUrl) : '/BG.svg'}')`,
+        }}
+      />
 
       {/* Dark gradient overlay for text readability */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/10" style={{ zIndex: 10 }} />
