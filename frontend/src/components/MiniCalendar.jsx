@@ -28,7 +28,7 @@ export default function MiniCalendar({ title, sub, date, time, flyerUrl }) {
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           zIndex: 0,
-          backgroundImage: `linear-gradient(rgba(10, 4, 20, 0.86), rgba(10, 4, 20, 0.62), rgba(10, 4, 20, 0.88)), url('${flyerUrl ? assetUrl(flyerUrl) : '/BG.svg'}')`,
+          backgroundImage: `linear-gradient(to top, rgba(10, 4, 20, 0.65), transparent 60%), url('${flyerUrl ? assetUrl(flyerUrl) : '/BG.svg'}')`,
         }}
       />
 
