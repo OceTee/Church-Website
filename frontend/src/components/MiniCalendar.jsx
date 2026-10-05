@@ -24,16 +24,23 @@ export default function MiniCalendar({ title, sub, date, time, flyerUrl }) {
   return (
     <article className="relative w-full overflow-hidden rounded-xl shadow-md bg-black" style={aspectStyle}>
       {/* Background image layer - at the very back */}
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          zIndex: 0,
-          backgroundImage: `linear-gradient(to top, rgba(10, 4, 20, 0.65), transparent 60%), url('${flyerUrl ? assetUrl(flyerUrl) : '/BG.svg'}')`,
-        }}
-      />
+      {flyerUrl ? (
+        <img
+          src={assetUrl(flyerUrl)}
+          alt=""
+          loading="lazy"
+          className="absolute inset-0 h-full w-full object-cover"
+          style={{ zIndex: 0 }}
+          onError={(e) => {
+            e.currentTarget.style.display = 'none';
+          }}
+        />
+      ) : (
+        <div className="absolute inset-0 h-full w-full bg-gradient-to-br from-[#65007f] to-[#3a0030]" style={{ zIndex: 0 }} />
+      )}
 
-      {/* Dark gradient overlay for text readability */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/10" style={{ zIndex: 10 }} />
+      {/* Subtle gradient overlay for text readability - only at bottom */}
+      <div className="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-black/60" style={{ zIndex: 10 }} />
 
       {/* Content layer - all text at the bottom, yellow badge top-right */}
       <div className="relative flex h-full flex-col justify-end p-5" style={{ zIndex: 20 }}>
