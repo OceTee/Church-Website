@@ -4,6 +4,7 @@ import { assetUrl } from "../lib/api";
 // Photo-first, text overlaid, maintaining the image's natural aspect ratio
 export default function MiniCalendar({ title, sub, date, time, flyerUrl }) {
   const [aspectRatio, setAspectRatio] = useState(null);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     if (!flyerUrl) return;
@@ -23,16 +24,19 @@ export default function MiniCalendar({ title, sub, date, time, flyerUrl }) {
 
   return (
     <article className="relative w-full overflow-hidden rounded-xl shadow-md bg-black" style={aspectStyle}>
-      <img
-        src={assetUrl(flyerUrl)}
-        alt=""
-        loading="lazy"
-        className="h-full w-full object-cover"
-        onError={(e) => {
-          e.currentTarget.style.display = "none";
-        }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-br from-[#65007f] to-[#3a0030]" />
+      {!imageError && flyerUrl ? (
+        <img
+          src={assetUrl(flyerUrl)}
+          alt=""
+          loading="lazy"
+          className="h-full w-full object-cover"
+          onError={() => {
+            setImageError(true);
+          }}
+        />
+      ) : (
+        <div className="h-full w-full bg-gradient-to-br from-[#65007f] to-[#3a0030]" />
+      )}
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/10" />
 
