@@ -24,7 +24,7 @@ export default function MiniCalendar({ title, sub, date, time, flyerUrl }) {
   const aspectStyle = aspectRatio ? { aspectRatio: aspectRatio } : {};
 
   return (
-    <article className="relative w-full overflow-hidden rounded-xl shadow-md bg-black" style={aspectStyle}>
+    <article className="relative w-full overflow-hidden rounded-xl shadow-md bg-[#330040]" style={aspectStyle}>
       {/* Background image layer - at the very back */}
       <div className="relative w-full h-full" style={{ zIndex: 0 }}>
         {flyerUrl && !imageError && (
