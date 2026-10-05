@@ -43,7 +43,7 @@ export default function ImageLightbox({ photos, index, onClose, onPrev, onNext }
           role="dialog"
           aria-modal="true"
           aria-label={photo.date || "Photo viewer"}
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 backdrop-blur-sm sm:p-8"
+          className="fixed inset-0 z-100 flex items-center justify-center bg-black/95 p-4 backdrop-blur-sm sm:p-8"
         >
           <button
             type="button"
