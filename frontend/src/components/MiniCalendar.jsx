@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { assetUrl } from "../lib/api";
 
 // Photo-first, text overlaid, maintaining the image's natural aspect ratio
 export default function MiniCalendar({ title, sub, date, time, flyerUrl }) {
   const [aspectRatio, setAspectRatio] = useState(null);
+  const imgRef = useRef(null);
 
   useEffect(() => {
     if (!flyerUrl) return;
@@ -24,20 +25,28 @@ export default function MiniCalendar({ title, sub, date, time, flyerUrl }) {
   return (
     <article className="relative w-full overflow-hidden rounded-xl shadow-md bg-black" style={aspectStyle}>
       {/* Background image layer - at the very back */}
-      {flyerUrl ? (
-        <img
-          src={assetUrl(flyerUrl)}
-          alt=""
-          loading="lazy"
-          className="absolute inset-0 h-full w-full object-cover"
-          style={{ zIndex: 0 }}
-          onError={(e) => {
-            e.currentTarget.style.display = 'none';
-          }}
+      <div className="relative w-full h-full" style={{ zIndex: 0 }}>
+        {flyerUrl && (
+          <img
+            ref={imgRef}
+            src={assetUrl(flyerUrl)}
+            alt=""
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover"
+            style={{ zIndex: 0, opacity: 1 }}
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
+            onLoad={() => {}}
+          />
+        )}
+        {/* Fallback gradient when no image or error */}
+        <div
+          className="absolute inset-0 h-full w-full bg-gradient-to-br from-[#65007f] to-[#3a0030]"
+          style={{ zIndex: 0, display: 'none' }}
+          data-fallback
         />
-      ) : (
-        <div className="absolute inset-0 h-full w-full bg-gradient-to-br from-[#65007f] to-[#3a0030]" style={{ zIndex: 0 }} />
-      )}
+      </div>
 
       {/* Subtle gradient overlay for text readability - only at bottom */}
       <div className="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-black/60" style={{ zIndex: 10 }} />
