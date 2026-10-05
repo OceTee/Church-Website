@@ -1,11 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { assetUrl } from "../lib/api";
 
 // Photo-first, text overlaid, maintaining the image's natural aspect ratio
 export default function MiniCalendar({ title, sub, date, time, flyerUrl }) {
   const [aspectRatio, setAspectRatio] = useState(null);
-  const [imageError, setImageError] = useState(false);
-  const imgRef = useRef(null);
 
   useEffect(() => {
     if (!flyerUrl) return;
@@ -24,30 +22,18 @@ export default function MiniCalendar({ title, sub, date, time, flyerUrl }) {
   const aspectStyle = aspectRatio ? { aspectRatio: aspectRatio } : {};
 
   return (
-    <article className="relative w-full overflow-hidden rounded-xl shadow-md bg-[#330040]" style={aspectStyle}>
+    <article className="relative w-full overflow-hidden rounded-xl shadow-md bg-black" style={aspectStyle}>
       {/* Background image layer - at the very back */}
-      <div className="relative w-full h-full" style={{ zIndex: 0 }}>
-        {flyerUrl && !imageError && (
-          <img
-            ref={imgRef}
-            src={assetUrl(flyerUrl)}
-            alt=""
-            loading="lazy"
-            className="absolute inset-0 h-full w-full object-cover"
-            style={{ zIndex: 0, opacity: 1 }}
-            onError={() => setImageError(true)}
-            onLoad={() => {}}
-          />
-        )}
-        {/* Fallback gradient when no image or error */}
-        <div
-          className="absolute inset-0 h-full w-full bg-gradient-to-br from-[#65007f] to-[#3a0030]"
-          style={{ zIndex: 0, display: imageError || !flyerUrl ? 'block' : 'none' }}
-        />
-      </div>
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          zIndex: 0,
+          backgroundImage: `linear-gradient(to top, rgba(10, 4, 20, 0.65), transparent 60%), url('${flyerUrl ? assetUrl(flyerUrl) : '/BG.svg'}')`,
+        }}
+      />
 
-      {/* Gradient overlay for text readability - full coverage with fade from bottom */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" style={{ zIndex: 10 }} />
+      {/* Dark gradient overlay for text readability */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/10" style={{ zIndex: 10 }} />
 
       {/* Content layer - all text at the bottom, yellow badge top-right */}
       <div className="relative flex h-full flex-col justify-end p-5" style={{ zIndex: 20 }}>
@@ -59,9 +45,9 @@ export default function MiniCalendar({ title, sub, date, time, flyerUrl }) {
           </div>
         </div>
 
-        {/* Bottom - all text content stacked with proper alignment */}
+        {/* Bottom - all text content stacked */}
         <div className="flex flex-col items-center gap-3 text-center px-4 pb-2">
-          {/* Title - centered, prominent */}
+          {/* Title */}
           <h2 className="font-playfair text-xl font-bold leading-tight text-white md:text-2xl lg:text-3xl">
             {title}
           </h2>
