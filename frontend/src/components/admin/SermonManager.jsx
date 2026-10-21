@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Eye, EyeOff, Trash2 } from "lucide-react";
 import { apiFetch } from "../../lib/api";
 import { createSermon } from "../../lib/sermons";
-import { formatEventDate as formatDate } from "../../lib/events";
+import { formatDate, todayIso } from "../../lib/dates";
 import SpeakerAvatar from "../SpeakerAvatar";
 import SermonBody from "../SermonBody";
 import {
@@ -15,12 +15,6 @@ import {
   dangerButtonClass,
   listRowClass,
 } from "./fieldStyles";
-
-function todayIso() {
-  const now = new Date();
-  const pad = (value) => String(value).padStart(2, "0");
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-}
 
 const emptyForm = () => ({ title: "", speaker: "", date: todayIso(), body: "", photo: null });
 

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { apiFetch, assetUrl } from "../../lib/api";
 import { createWithUpload } from "../../lib/uploads";
+import { formatAge, formatDate, todayIso } from "../../lib/dates";
 import {
   cardClass,
   sectionTitleClass,
@@ -11,10 +12,14 @@ import {
   dangerButtonClass,
 } from "./fieldStyles";
 
-const EMPTY_FORM = { date: "", file: null };
+// The date the photo was taken. It defaults to today, the usual case when
+// uploading straight after a service.
+const emptyForm = () => ({ date: todayIso(), file: null });
+
+const photoDate = (photo) => formatDate(photo.date, { weekday: false });
 
 export default function GalleryManager({ photos, onChanged, onError }) {
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
 
   const handleSubmit = async (event) => {
@@ -30,7 +35,7 @@ export default function GalleryManager({ photos, onChanged, onError }) {
       });
 
       event.target.reset();
-      setForm(EMPTY_FORM);
+      setForm(emptyForm());
       await onChanged();
     } catch (error) {
       onError(error);
@@ -40,7 +45,7 @@ export default function GalleryManager({ photos, onChanged, onError }) {
   };
 
   const handleDelete = async (photo) => {
-    const label = photo.date ? `the photo from ${photo.date}` : "this photo";
+    const label = photo.date ? `the photo from ${photoDate(photo)}` : "this photo";
     if (!window.confirm(`Delete ${label}? This cannot be undone.`)) return;
 
     const { id } = photo;
@@ -79,17 +84,20 @@ export default function GalleryManager({ photos, onChanged, onError }) {
           </div>
           <div>
             <label className={labelClass} htmlFor="photo-date">
-              Date / Context
+              Date Taken
             </label>
+            {/* A real date, so each photo's age can be shown and the gallery
+                sorted newest first. A photo cannot be from the future. */}
             <input
               id="photo-date"
+              type="date"
               className={inputClass}
               required
+              max={todayIso()}
               value={form.date}
               onChange={(event) =>
                 setForm((current) => ({ ...current, date: event.target.value }))
               }
-              placeholder="e.g. June 2026"
             />
           </div>
         </div>
@@ -116,18 +124,27 @@ export default function GalleryManager({ photos, onChanged, onError }) {
             >
               <img
                 src={assetUrl(photo.imageUrl)}
-                alt={photo.date}
+                alt={photo.date ? `Photo from ${photoDate(photo)}` : "Gallery photo"}
                 loading="lazy"
                 className="h-32 w-full object-cover"
               />
               {/* Always visible: a hover-only button cannot be seen on a
                   phone but can still be tapped by accident. */}
               <figcaption className="flex items-center justify-between gap-2 p-2">
-                <p className="truncate font-nunito text-xs text-gray-600">{photo.date}</p>
+                <div className="min-w-0">
+                  <p className="truncate font-nunito text-xs font-semibold text-gray-700">
+                    {photoDate(photo)}
+                  </p>
+                  {formatAge(photo.date) && (
+                    <p className="truncate font-nunito text-xs text-gray-500">
+                      {formatAge(photo.date)}
+                    </p>
+                  )}
+                </div>
                 <button
                   type="button"
                   onClick={() => handleDelete(photo)}
-                  aria-label={`Delete photo from ${photo.date}`}
+                  aria-label={`Delete photo from ${photoDate(photo)}`}
                   className={dangerButtonClass}
                 >
                   <Trash2 size={16} />

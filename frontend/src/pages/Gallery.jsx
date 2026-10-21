@@ -3,6 +3,7 @@ import { Maximize2 } from "lucide-react";
 import Header from "../components/Header";
 import ImageLightbox from "../components/ImageLightbox";
 import { apiJson, assetUrl } from "../lib/api";
+import { formatDate } from "../lib/dates";
 
 export default function Gallery() {
   const [photos, setPhotos] = useState([]);
@@ -21,6 +22,8 @@ export default function Gallery() {
             (Array.isArray(data) ? data : []).map((photo) => ({
               ...photo,
               fullUrl: assetUrl(photo.imageUrl),
+              // "12 Oct 2026"; older free-text dates are shown as typed.
+              label: formatDate(photo.date, { weekday: false }),
             }))
           );
         }
@@ -76,7 +79,7 @@ export default function Gallery() {
                 onClick={() => setActiveIndex(index)}
                 role="button"
                 tabIndex={0}
-                aria-label={`View larger: ${photo.date || "photo"}`}
+                aria-label={`View larger: ${photo.label || "photo"}`}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
@@ -87,7 +90,7 @@ export default function Gallery() {
               >
                 <img
                   src={photo.fullUrl}
-                  alt={photo.date}
+                  alt={photo.label ? `Photo from ${photo.label}` : "Gallery photo"}
                   loading="lazy"
                   className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
@@ -95,7 +98,7 @@ export default function Gallery() {
                   <Maximize2 size={16} />
                 </span>
                 <figcaption className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 via-transparent to-transparent p-4 font-nunito text-sm text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-                  {photo.date}
+                  {photo.label}
                 </figcaption>
               </figure>
             ))}

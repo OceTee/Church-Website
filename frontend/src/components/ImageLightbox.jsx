@@ -42,7 +42,7 @@ export default function ImageLightbox({ photos, index, onClose, onPrev, onNext }
           onClick={onClose}
           role="dialog"
           aria-modal="true"
-          aria-label={photo.date || "Photo viewer"}
+          aria-label={photo.label || "Photo viewer"}
           className="fixed inset-0 z-100 flex items-center justify-center bg-black/95 p-4 backdrop-blur-sm sm:p-8"
         >
           <button
@@ -92,11 +92,11 @@ export default function ImageLightbox({ photos, index, onClose, onPrev, onNext }
           >
             <img
               src={photo.fullUrl}
-              alt={photo.date || "Gallery photo"}
+              alt={photo.label ? `Photo from ${photo.label}` : "Gallery photo"}
               className="max-h-[80vh] w-auto max-w-full rounded-lg object-contain shadow-2xl"
             />
             <figcaption className="flex items-center gap-3 font-nunito text-sm text-white/80">
-              <span>{photo.date}</span>
+              <span>{photo.label}</span>
               {photos.length > 1 && (
                 <span className="text-white/40">
                   {index + 1} / {photos.length}

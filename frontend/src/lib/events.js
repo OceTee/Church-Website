@@ -3,18 +3,12 @@
 // those are displayed as typed and are never treated as past, because there is
 // no reliable way to tell when they happen.
 
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+import { formatDate, isIsoDate, todayIso } from "./dates";
+
 const TIME_24 = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-const pad = (value) => String(value).padStart(2, "0");
-
-function localToday() {
-  const now = new Date();
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-}
-
 export function isPastEvent(event) {
-  return ISO_DATE.test(event?.date ?? "") && event.date < localToday();
+  return isIsoDate(event?.date) && event.date < todayIso();
 }
 
 export function upcomingEvents(events) {
@@ -23,15 +17,7 @@ export function upcomingEvents(events) {
 
 /** "2026-10-31" -> "Sat, 31 Oct 2026"; free text is returned unchanged. */
 export function formatEventDate(value) {
-  if (!ISO_DATE.test(value ?? "")) return value;
-  const [year, month, day] = value.split("-").map(Number);
-  // Built from parts so it is midnight local time, not UTC.
-  return new Date(year, month - 1, day).toLocaleDateString("en-GB", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  return formatDate(value);
 }
 
 /** "15:00" -> "3:00 PM"; free text is returned unchanged. */

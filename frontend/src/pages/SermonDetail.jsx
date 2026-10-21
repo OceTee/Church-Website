@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import SpeakerAvatar from "../components/SpeakerAvatar";
 import SermonBody from "../components/SermonBody";
 import { fetchSermon } from "../lib/sermons";
-import { formatEventDate as formatDate } from "../lib/events";
+import { formatDate } from "../lib/dates";
 import { site } from "../config/site";
 
 /**

@@ -401,7 +401,16 @@ app.post("/api/blob-upload", async (req, res) => {
 // --- GALLERY ENDPOINTS ---
 app.get("/api/gallery", async (req, res) => {
     try {
-        const photos = await query("SELECT * FROM gallery ORDER BY createdAt DESC, id DESC");
+        // Newest photo first, by the date it was taken. Older photos carry a
+        // free-text date ("June 2026") that cannot be sorted, so they are
+        // placed by the day they were uploaded instead.
+        const photos = await query(
+            `SELECT * FROM gallery
+             ORDER BY CASE
+                 WHEN date GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]' THEN date
+                 ELSE substr(createdAt, 1, 10)
+             END DESC, createdAt DESC, id DESC`
+        );
         res.json(photos);
     } catch (err) {
         serverError(res, err);

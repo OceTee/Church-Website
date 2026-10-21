@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import SpeakerAvatar from "./SpeakerAvatar";
-import { formatEventDate as formatDate } from "../lib/events";
+import { formatDate } from "../lib/dates";
 
 /**
  * A sermon in a list: the title, then the speaker as a circle photo with
