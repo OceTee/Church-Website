@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRightToLine } from "lucide-react";
 import Hero from "../components/Hero";
 import ServiceSchedule from "../components/ServiceSchedule";
-import MiniSermon from "../components/MiniSermon";
+import SermonCard from "../components/SermonCard";
 import MiniCalendar from "../components/MiniCalendar";
 import { apiJson } from "../lib/api";
 import { upcomingEvents } from "../lib/events";
@@ -73,17 +73,13 @@ export default function Landing() {
         ) : sermons.length === 0 ? (
           <p className={EMPTY_MESSAGE}>No recent sermons available.</p>
         ) : (
-          <div className="grid gap-5 md:grid-cols-3">
+          <ul className="grid gap-[1.618rem] md:grid-cols-3">
             {sermons.map((sermon) => (
-              <MiniSermon
-                key={sermon.id}
-                type="Audio Message"
-                title={sermon.title}
-                date={sermon.date}
-                audioUrl={sermon.audioUrl}
-              />
+              <li key={sermon.id}>
+                <SermonCard sermon={sermon} />
+              </li>
             ))}
-          </div>
+          </ul>
         )}
 
         <div className="mb-6 mt-14 flex flex-wrap items-end justify-between gap-3">

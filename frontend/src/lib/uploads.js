@@ -4,10 +4,10 @@ let cachedConfig = null;
 
 /**
  * The API advertises which upload transport to use. On Vercel a serverless
- * function can only accept a 4.5 MB request body, so large files (sermon
- * audio) must be uploaded straight to Vercel Blob from the browser and only
- * the resulting URL is sent to the API. Locally the API accepts multipart
- * form data directly, and the blob client is never even loaded.
+ * function can only accept a 4.5 MB request body, so files are uploaded
+ * straight to Vercel Blob from the browser and only the resulting URL is sent
+ * to the API. Locally the API accepts multipart form data directly, and the
+ * blob client is never even loaded.
  */
 export async function getUploadConfig() {
     if (!cachedConfig) {
@@ -15,6 +15,14 @@ export async function getUploadConfig() {
     }
     return cachedConfig;
 }
+
+// For each category: the multipart field the API reads the file from, and the
+// JSON field that carries the URL after a direct-to-blob upload.
+const UPLOAD_FIELDS = {
+    gallery: { file: "image", url: "imageUrl" },
+    events: { file: "flyer", url: "flyerUrl" },
+    sermons: { file: "speakerImage", url: "speakerImageUrl" },
+};
 
 async function uploadDirect(category, file) {
     const { grant } = await apiJson("/uploads/grant", {
@@ -37,24 +45,20 @@ async function uploadDirect(category, file) {
     return blob.url;
 }
 
-function urlFieldFor(category) {
-    return category === "gallery" ? "imageUrl" : `${category === "events" ? "flyer" : "audio"}Url`;
-}
-
 /**
- * Uploads a file and creates its database record, then returns the record.
- * `fields` holds the remaining form values (title, date, ...).
+ * Uploads a file (if any) and creates its database record, then returns the
+ * record. `fields` holds the remaining form values (title, date, ...).
  */
 export async function createWithUpload({ category, file, fields = {} }) {
     const { uploadMode } = await getUploadConfig();
-    const urlField = urlFieldFor(category);
+    const names = UPLOAD_FIELDS[category];
 
     if (file && uploadMode === "direct") {
         const url = await uploadDirect(category, file);
         return apiJson(`/${category}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...fields, [urlField]: url }),
+            body: JSON.stringify({ ...fields, [names.url]: url }),
         });
     }
 
@@ -62,11 +66,7 @@ export async function createWithUpload({ category, file, fields = {} }) {
     for (const [key, value] of Object.entries(fields)) {
         if (value !== undefined && value !== null) body.append(key, value);
     }
-
-    if (category === "gallery") body.append("image", file);
-    else if (category === "events") {
-        if (file) body.append("flyer", file);
-    } else body.append("audio", file);
+    if (file) body.append(names.file, file);
 
     return apiJson(`/${category}`, { method: "POST", body });
 }

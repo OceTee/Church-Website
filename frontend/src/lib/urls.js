@@ -29,7 +29,9 @@ export function cssUrl(path) {
 
 export function assetUrl(path) {
     if (!path) return "";
-    if (/^https?:\/\//i.test(path)) return path;
+    // Absolute URLs, and local `blob:` previews of a file being uploaded,
+    // are used as they are.
+    if (/^(https?:\/\/|blob:)/i.test(path)) return path;
     const normalized = path.startsWith("/") ? path : `/${path}`;
     return `${ASSET_BASE}${normalized}`;
 }

@@ -3,6 +3,7 @@ import { createClient } from "@libsql/client";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { PLACEHOLDER_SERMON } from "./placeholderSermon.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -51,6 +52,47 @@ export async function run(sql, params = []) {
     };
 }
 
+/**
+ * Sermons used to be links to recordings (title, date, audioUrl) and are now
+ * written sermons. An old-shape table is rebuilt once, inside one transaction,
+ * using the CREATE statement from schema.sql. Any old rows are kept, with the
+ * recording link as their body, so nothing is lost.
+ */
+async function migrateSermonsToText(schemaStatements) {
+    const columns = (await client.execute("PRAGMA table_info(sermons)")).rows.map((row) => row.name);
+    if (!columns.includes("audioUrl")) return;
+
+    // The index moves with the renamed table, so it is dropped first or the
+    // schema's CREATE INDEX IF NOT EXISTS would skip the new table.
+    await client.batch(
+        [
+            "ALTER TABLE sermons RENAME TO sermons_old",
+            "DROP INDEX IF EXISTS idx_sermons_createdAt",
+            ...schemaStatements,
+            `INSERT INTO sermons (id, title, speaker, speakerImageUrl, body, date, createdAt)
+             SELECT id, title, '', NULL, 'Recording: ' || audioUrl, date, createdAt FROM sermons_old`,
+            "DROP TABLE sermons_old",
+        ].map((sql) => ({ sql })),
+        "write"
+    );
+    console.log("[db] Migrated sermons to the written-sermon format.");
+}
+
+/** Creates the sample sermon once per database. See placeholderSermon.js. */
+async function seedPlaceholderSermon() {
+    const claimed = await client.execute({
+        sql: "INSERT INTO app_meta (key, value) VALUES ('placeholderSermonSeeded', ?) ON CONFLICT(key) DO NOTHING",
+        args: [new Date().toISOString()],
+    });
+    if (Number(claimed.rowsAffected) === 0) return;
+
+    const { title, speaker, speakerImageUrl, body } = PLACEHOLDER_SERMON;
+    await client.execute({
+        sql: "INSERT INTO sermons (title, speaker, speakerImageUrl, body, date) VALUES (?, ?, ?, ?, date('now'))",
+        args: [title, speaker, speakerImageUrl, body],
+    });
+}
+
 let schemaPromise = null;
 
 /**
@@ -72,6 +114,8 @@ export function ensureSchema() {
                 .filter(Boolean);
 
             await client.batch(statements.map((statement) => ({ sql: statement })), "write");
+            await migrateSermonsToText(statements);
+            await seedPlaceholderSermon();
         })().catch((error) => {
             // Let the next caller retry instead of caching a failure forever.
             schemaPromise = null;

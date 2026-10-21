@@ -12,6 +12,7 @@ import Events from "../pages/Events";
 import Stream from "../pages/Stream";
 import Gallery from "../pages/Gallery";
 import Sermons from "../pages/Sermons";
+import SermonDetail from "../pages/SermonDetail";
 import Connect from "../pages/Connect";
 import Login from "../pages/Login";
 import Dashboard from "../pages/Dashboard";
@@ -34,6 +35,7 @@ export default function AppLayout() {
             <Route path="/stream" element={<Stream />} />
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/sermons" element={<Sermons />} />
+            <Route path="/sermons/:id" element={<SermonDetail />} />
             <Route path="/connect" element={<Connect />} />
             <Route path="/admin/login" element={<Login />} />
             <Route

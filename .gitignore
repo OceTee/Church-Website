@@ -24,6 +24,7 @@ dist-ssr
 # Local-only data: uploads and the database fall back to the filesystem when
 # the Turso / Vercel Blob env vars are absent.
 public/uploads/
+backend/public/uploads/
 frontend/public/uploads/
 backend/server/database.sqlite
 backend/server/database.sqlite-journal

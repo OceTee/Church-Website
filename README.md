@@ -9,7 +9,7 @@ This project is a modern, fully responsive church website paired with a custom-b
 Instead of using a generic website builder, I developed a bespoke full-stack solution tailored specifically to the church's needs:
 
 *   **Dynamic Admin Dashboard:** A secure, hidden portal where administrators can effortlessly update the website's content in real-time.
-*   **Sermons Manager:** Staff paste a link to each recording. YouTube and Vimeo links become embedded players, direct audio links become HTML5 audio players, and anything else becomes a plain link, so the congregation can catch up on past messages directly from their browsers.
+*   **Sermons Manager:** Staff publish written sermons with a title, the speaker's name and photo, and the full text (with simple formatting for section headings and scripture quotations). Visitors browse a list of sermon cards and open each one to read it in full.
 *   **Events Calendar:** A streamlined scheduling system. New events automatically appear on the landing page complete with dates, times, and optional flyer images, and drop off the public pages once their date has passed.
 *   **Live Gallery:** A cloud-synced photo gallery that updates instantly when new pictures are uploaded via the admin portal.
 *   **Direct-to-Inbox Contact Form:** A reliable messaging system that bypasses third-party email services, routing visitor inquiries securely and directly to the church's inbox.

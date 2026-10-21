@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { assetUrl, cssUrl } from "../lib/api";
 import { formatEventDate, formatEventTime, upcomingEvents } from "../lib/events";
 import { site } from "../config/site";
+import churchLogos from "../assets/church-logos.png";
 
 const FALLBACK_BG = "/BG.svg";
 const AUTO_MS = 6000;
@@ -95,17 +96,25 @@ export default function Hero({ events = [] }) {
 
         {/* Original hero text, kept through every slide */}
         <div>
-          <p className="mb-3 font-inter text-xs font-semibold uppercase tracking-[0.25em] text-[#fde68a]">
-            CAC Possibility Assembly Nation
-          </p>
-          <h1 className="font-playfair text-4xl font-bold leading-tight text-white sm:text-5xl md:text-6xl lg:text-7xl">
+          {/* Golden ratio: the logos are φ² times the heading's font size
+              (6.854rem over 2.618rem, then 11.09rem over 4.236rem) and sit one
+              φ step above it. */}
+          <img
+            src={churchLogos}
+            alt="Christ Apostolic Church and Possibility Assembly Nation logos"
+            width={624}
+            height={305}
+            fetchPriority="high"
+            className="mx-auto mb-[1.618rem] h-[6.854rem] w-auto lg:mb-[2.618rem] lg:h-[11.09rem]"
+          />
+          <h1 className="font-playfair text-gr-xl font-bold leading-tight text-white lg:text-gr-2xl">
             Welcome to {site.name}
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl font-inter text-lg text-white/90 md:text-xl">
+          <p className="mx-auto mt-4 max-w-2xl font-inter text-lg text-white/90 md:text-gr-md">
             {site.tagline}
           </p>
 
-          <div className="mt-9 flex flex-col justify-center gap-4 font-inter sm:flex-row">
+          <div className="mt-[2.618rem] flex flex-col justify-center gap-4 font-inter sm:flex-row">
             <Link
               to="/stream"
               className="flex items-center justify-center gap-2 rounded-full bg-[#ffd700] px-7 py-3.5 text-black shadow-lg transition duration-100 hover:scale-105"

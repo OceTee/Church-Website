@@ -19,12 +19,23 @@ CREATE TABLE IF NOT EXISTS events (
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Written sermons. An older shape (title, date, audioUrl) is rebuilt into this
+-- one by migrateSermonsToText() in db.js.
 CREATE TABLE IF NOT EXISTS sermons (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
+    speaker TEXT NOT NULL,
+    speakerImageUrl TEXT,
+    body TEXT NOT NULL,
     date TEXT NOT NULL,
-    audioUrl TEXT NOT NULL,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- One-off flags, e.g. that the placeholder sermon has been created, so it is
+-- not recreated after an admin deletes it.
+CREATE TABLE IF NOT EXISTS app_meta (
+    key TEXT PRIMARY KEY,
+    value TEXT
 );
 
 -- Single admin identity. The password is stored as a scrypt hash + salt, never

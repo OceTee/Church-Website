@@ -16,20 +16,7 @@ const IMAGE_TYPES = [
     "image/avif",
 ];
 
-const AUDIO_TYPES = [
-    "audio/mpeg",
-    "audio/mp3",
-    "audio/wav",
-    "audio/x-wav",
-    "audio/ogg",
-    "audio/mp4",
-    "audio/aac",
-    "audio/m4a",
-    "audio/x-m4a",
-];
-
 const IMAGE_MIME = /^image\/(jpeg|png|webp|gif|avif)$/;
-const AUDIO_MIME = /^audio\/(mpeg|mp3|wav|x-wav|ogg|mp4|aac|m4a)$/;
 
 export const CATEGORIES = {
     gallery: {
@@ -48,13 +35,14 @@ export const CATEGORIES = {
         maxBytes: 8 * 1024 * 1024,
         label: "flyer image",
     },
+    // Sermons are written text; the only upload is the speaker's photo.
     sermons: {
         directory: "sermons",
-        field: "audio",
-        allowedMime: AUDIO_MIME,
-        allowedTypes: AUDIO_TYPES,
-        maxBytes: 80 * 1024 * 1024,
-        label: "audio file",
+        field: "speakerImage",
+        allowedMime: IMAGE_MIME,
+        allowedTypes: IMAGE_TYPES,
+        maxBytes: 8 * 1024 * 1024,
+        label: "speaker photo",
     },
 };
 

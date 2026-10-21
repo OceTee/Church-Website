@@ -163,7 +163,14 @@ const contactLimit = rateLimit(
 
 // Upper bounds for admin-entered text, so a bad request cannot store
 // megabytes in a single row.
-const TEXT_LIMITS = { title: 200, description: 5000, date: 100, time: 50 };
+const TEXT_LIMITS = {
+    title: 200,
+    description: 5000,
+    date: 100,
+    time: 50,
+    speaker: 120,
+    body: 100000,
+};
 
 function badRequest(res, message) {
     return res.status(400).json({ error: message });
@@ -528,10 +535,31 @@ app.delete("/api/events/:id", requireAuth, async (req, res) => {
 });
 
 // --- SERMONS ENDPOINTS ---
+// Sermons are written text. The list leaves out the body, which can be tens of
+// kilobytes each; the full text comes from GET /api/sermons/:id.
 app.get("/api/sermons", async (req, res) => {
     try {
-        const sermons = await query("SELECT * FROM sermons ORDER BY createdAt DESC, id DESC");
+        const sermons = await query(
+            `SELECT id, title, speaker, speakerImageUrl, date, createdAt
+             FROM sermons ORDER BY date DESC, createdAt DESC, id DESC`
+        );
         res.json(sermons);
+    } catch (err) {
+        serverError(res, err);
+    }
+});
+
+app.get("/api/sermons/:id", async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+        if (!Number.isInteger(id) || id < 1) {
+            return res.status(404).json({ error: "Sermon not found" });
+        }
+        const sermons = await query("SELECT * FROM sermons WHERE id = ?", [id]);
+        if (sermons.length === 0) {
+            return res.status(404).json({ error: "Sermon not found" });
+        }
+        res.json(sermons[0]);
     } catch (err) {
         serverError(res, err);
     }
@@ -543,37 +571,41 @@ app.post(
     sermonsUpload.single(SERMONS_FIELD),
     async (req, res) => {
         try {
-            const title = textField(req.body, "title");
-            const date = textField(req.body, "date");
-            const existingUrl = textField(req.body, "audioUrl");
+            const fields = {
+                title: textField(req.body, "title"),
+                speaker: textField(req.body, "speaker"),
+                body: textField(req.body, "body"),
+                date: textField(req.body, "date"),
+            };
+            const existingUrl = textField(req.body, "speakerImageUrl");
 
-            if (!req.file && !existingUrl) {
-                return badRequest(res, "No audio file uploaded");
-            }
-
+            // The speaker photo is optional: without one the site shows the
+            // speaker's initials instead.
             const problem =
-                (!title ? "Sermon title is required" : null) ||
-                lengthError({ title, date }) ||
-                (existingUrl && !isSafeMediaUrl(existingUrl) ? "Invalid sermon link." : null);
+                (!fields.title || !fields.speaker || !fields.body
+                    ? "Title, speaker and sermon text are required"
+                    : null) ||
+                lengthError(fields) ||
+                (existingUrl && !isSafeMediaUrl(existingUrl) ? "Invalid speaker photo URL." : null);
             if (problem) {
                 discardUpload(req.file);
                 return badRequest(res, problem);
             }
 
-            const audioUrl = existingUrl || (await storeUpload("sermons", req.file));
-            const sermonDate = date || today();
+            const speakerImageUrl = existingUrl
+                ? existingUrl
+                : req.file
+                  ? await storeUpload("sermons", req.file)
+                  : null;
+            const { title, speaker, body } = fields;
+            const date = fields.date || today();
 
             const result = await run(
-                "INSERT INTO sermons (title, date, audioUrl) VALUES (?, ?, ?)",
-                [title, sermonDate, audioUrl]
+                "INSERT INTO sermons (title, speaker, speakerImageUrl, body, date) VALUES (?, ?, ?, ?, ?)",
+                [title, speaker, speakerImageUrl, body, date]
             );
 
-            res.status(201).json({
-                id: result.lastID,
-                title,
-                date: sermonDate,
-                audioUrl,
-            });
+            res.status(201).json({ id: result.lastID, title, speaker, speakerImageUrl, body, date });
         } catch (err) {
             serverError(res, err);
         }
@@ -584,7 +616,7 @@ app.delete("/api/sermons/:id", requireAuth, async (req, res) => {
     try {
         const sermons = await query("SELECT * FROM sermons WHERE id = ?", [req.params.id]);
         if (sermons.length > 0) {
-            await removeStoredFile(sermons[0].audioUrl);
+            await removeStoredFile(sermons[0].speakerImageUrl);
             await run("DELETE FROM sermons WHERE id = ?", [req.params.id]);
         }
         res.json({ message: "Deleted successfully" });
