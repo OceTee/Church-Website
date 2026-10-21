@@ -61,7 +61,11 @@ let schemaPromise = null;
 export function ensureSchema() {
     if (!schemaPromise) {
         schemaPromise = (async () => {
-            const sql = fs.readFileSync(path.join(__dirname, "schema.sql"), "utf8");
+            // Comments are stripped first so a `;` inside one cannot split a
+            // statement in half.
+            const sql = fs
+                .readFileSync(path.join(__dirname, "schema.sql"), "utf8")
+                .replace(/--.*$/gm, "");
             const statements = sql
                 .split(";")
                 .map((statement) => statement.trim())

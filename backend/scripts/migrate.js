@@ -16,13 +16,19 @@ try {
         console.log(`  - ${row.name}`);
     }
 
+    // Null when AUTH_DISABLED is set, or in production without ADMIN_PASSWORD;
+    // ensureAdminAccount has already logged why.
     const admin = await ensureAdminAccount();
-    console.log(
-        `Admin account "${admin.username}" is ready (password version ${admin.passwordVersion}).`
-    );
+    if (admin) {
+        console.log(
+            `Admin account "${admin.username}" is ready (password version ${admin.passwordVersion}).`
+        );
+    } else {
+        console.warn("No admin account was created. See the message above.");
+    }
     process.exit(0);
 } catch (error) {
-    console.error("Failed to apply schema:");
+    console.error("Migration failed:");
     console.error(error);
     process.exit(1);
 }

@@ -40,6 +40,15 @@ CREATE TABLE IF NOT EXISTS admins (
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Fixed-window request counters for the public endpoints (login, contact).
+-- Kept in the database rather than in memory because every serverless
+-- instance has its own memory, which would make a per-process limit useless.
+CREATE TABLE IF NOT EXISTS rate_limits (
+    id TEXT PRIMARY KEY,
+    count INTEGER NOT NULL,
+    resetAt INTEGER NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_gallery_createdAt ON gallery (createdAt DESC);
 CREATE INDEX IF NOT EXISTS idx_events_date ON events (date ASC);
 CREATE INDEX IF NOT EXISTS idx_sermons_createdAt ON sermons (createdAt DESC);

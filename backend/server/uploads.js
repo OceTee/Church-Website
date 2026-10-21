@@ -103,26 +103,23 @@ function objectName(category, originalName) {
     return `${category}-${crypto.randomUUID()}${safeExtension(originalName)}`;
 }
 
+const BLOB_HOST = /\.blob\.vercel-storage\.com$/i;
+
 /**
- * Validates a file against a category's rules. Used both by the multer
- * pipeline and by the direct-to-blob upload route, so the limits are enforced
- * on the server no matter which path the browser takes.
+ * Whether a client-supplied media URL may be stored and later rendered: an
+ * absolute http(s) URL, or a root-relative `/uploads/...` path from local
+ * development. Anything else (`javascript:`, `data:`, free text, `..`) is
+ * refused before it reaches the database.
  */
-export function validateUploadMeta(category, meta = {}) {
-    if (!isValidCategory(category)) {
-        return "Unknown upload category.";
+export function isSafeMediaUrl(value) {
+    if (typeof value !== "string" || value.length > 2048 || /\s/.test(value)) return false;
+    if (value.startsWith("/uploads/")) return !value.split("/").includes("..");
+    try {
+        const url = new URL(value);
+        return url.protocol === "https:" || url.protocol === "http:";
+    } catch {
+        return false;
     }
-
-    const config = getCategory(category);
-    const { size, type } = meta;
-
-    if (!config.allowedTypes.includes(type)) {
-        return `Unsupported ${config.label} type.`;
-    }
-    if (typeof size === "number" && size > config.maxBytes) {
-        return `${config.label} is larger than ${Math.round(config.maxBytes / (1024 * 1024))} MB.`;
-    }
-    return null;
 }
 
 export function createUpload(category) {
@@ -160,10 +157,6 @@ export function uploadField(category) {
     return getCategory(category).field;
 }
 
-export function uploadsRootPath() {
-    return uploadsRoot;
-}
-
 export function ensureUploadsRoot() {
     if (!isBlobStorage) ensureDirectory(uploadsRoot);
 }
@@ -193,7 +186,10 @@ export async function storeUpload(category, file) {
 
 function resolvePublicFilePath(publicUrl) {
     if (!publicUrl || !publicUrl.startsWith("/uploads/")) return null;
-    return path.join(projectRoot, "public", publicUrl);
+    // Resolve, then confirm the result is still inside the uploads folder, so
+    // a stored `/uploads/../server/app.js` can never delete source files.
+    const filePath = path.resolve(projectRoot, "public", `.${publicUrl}`);
+    return filePath.startsWith(uploadsRoot + path.sep) ? filePath : null;
 }
 
 /**
@@ -213,7 +209,15 @@ export async function removeStoredFile(publicUrl) {
     if (!publicUrl) return false;
 
     if (isBlobStorage) {
-        if (!/^https:\/\//i.test(publicUrl)) return false;
+        // Sermons are stored as YouTube or other external links. Only files in
+        // our own blob store are ours to delete.
+        let host;
+        try {
+            host = new URL(publicUrl).hostname;
+        } catch {
+            return false;
+        }
+        if (!BLOB_HOST.test(host)) return false;
         try {
             const { del } = await import("@vercel/blob");
             await del(publicUrl, { token: process.env.BLOB_READ_WRITE_TOKEN });

@@ -11,7 +11,8 @@ import {
     requireAuth,
     issueUploadGrant,
     verifyUploadGrant,
-    verifyToken,
+    verifySession,
+    bearerToken,
     ensureAdminAccount,
     getAdminSetupStatus,
     isAuthDisabled,
@@ -21,25 +22,51 @@ import {
     uploadField,
     isBlobStorage,
     isValidCategory,
+    isSafeMediaUrl,
     uploadLimits,
-    validateUploadMeta,
     storeUpload,
     discardUpload,
     removeStoredFile,
     ensureUploadsRoot,
     handleUploadError,
 } from "./uploads.js";
+import { rateLimit } from "./rateLimit.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.join(__dirname, "..");
 const IS_PRODUCTION_LIKE = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL);
 
+// The church is in Ibadan, so "today" for a record with no date is the date
+// there, not in UTC (which is still yesterday until 1am local time).
+const SITE_TIME_ZONE = "Africa/Lagos";
+
 const app = express();
 
 // Set if database initialisation fails on cold start; surfaced by /api/health
 // rather than thrown, so a bad deployment still serves its other routes.
 let startupError = null;
+let initPromise = null;
+
+/**
+ * Creates tables/indexes and the first admin account. Never throws: a failure
+ * is recorded in `startupError` and the next request retries, so a database
+ * blip during a cold start does not leave the instance broken until recycled.
+ */
+function initialise() {
+    if (!initPromise) {
+        initPromise = (async () => {
+            await ensureSchema();
+            await ensureAdminAccount();
+            startupError = null;
+        })().catch((error) => {
+            initPromise = null;
+            startupError = error;
+            console.error("[startup] Database initialisation failed:", error);
+        });
+    }
+    return initPromise;
+}
 
 app.disable("x-powered-by");
 
@@ -88,6 +115,12 @@ app.use((req, res, next) => {
     next();
 });
 
+// Retry a failed cold-start initialisation before handling the request.
+app.use(async (req, res, next) => {
+    if (startupError) await initialise();
+    next();
+});
+
 if (!isBlobStorage) {
     // Local development only: Vercel serves these from the CDN instead.
     app.use(
@@ -106,6 +139,32 @@ const GALLERY_FIELD = uploadField("gallery");
 const EVENTS_FIELD = uploadField("events");
 const SERMONS_FIELD = uploadField("sermons");
 
+// Public endpoints that do real work per request get a per-IP budget. Without
+// one, the admin password can be guessed indefinitely and the contact form
+// can flood the church inbox and burn through Gmail's daily sending quota.
+const FIFTEEN_MINUTES = 15 * 60 * 1000;
+const ONE_HOUR = 60 * 60 * 1000;
+
+const loginLimit = rateLimit(
+    "login",
+    { limit: 10, windowMs: FIFTEEN_MINUTES },
+    "Too many sign-in attempts. Please wait 15 minutes and try again."
+);
+const passwordLimit = rateLimit(
+    "password",
+    { limit: 10, windowMs: FIFTEEN_MINUTES },
+    "Too many attempts. Please wait 15 minutes and try again."
+);
+const contactLimit = rateLimit(
+    "contact",
+    { limit: 5, windowMs: ONE_HOUR },
+    "You have sent several messages already. Please try again later, or email us directly."
+);
+
+// Upper bounds for admin-entered text, so a bad request cannot store
+// megabytes in a single row.
+const TEXT_LIMITS = { title: 200, description: 5000, date: 100, time: 50 };
+
 function badRequest(res, message) {
     return res.status(400).json({ error: message });
 }
@@ -115,38 +174,88 @@ function serverError(res, err) {
     return res.status(500).json({ error: "Something went wrong. Please try again." });
 }
 
+/** A trimmed string field from the request body, or "" if absent/not a string. */
+function textField(body, name) {
+    const value = body?.[name];
+    return typeof value === "string" ? value.trim() : "";
+}
+
+/** Returns an error message for the first field that exceeds its limit. */
+function lengthError(fields) {
+    for (const [name, value] of Object.entries(fields)) {
+        if (value.length > TEXT_LIMITS[name]) {
+            return `The ${name} is too long (maximum ${TEXT_LIMITS[name]} characters).`;
+        }
+    }
+    return null;
+}
+
+function today() {
+    // en-CA formats as YYYY-MM-DD.
+    return new Intl.DateTimeFormat("en-CA", { timeZone: SITE_TIME_ZONE }).format(new Date());
+}
+
+/**
+ * The blob client sends `clientPayload` as a JSON string. Dashboards built
+ * before that was fixed sent a plain object, so both shapes are accepted.
+ */
+function parseClientPayload(raw) {
+    if (raw && typeof raw === "object") return raw;
+    if (typeof raw !== "string") return {};
+    try {
+        const value = JSON.parse(raw);
+        return value && typeof value === "object" ? value : {};
+    } catch {
+        return {};
+    }
+}
+
 // --- ROOT / HEALTH ENDPOINTS ---
 app.get("/api", (req, res) => {
     res.json({ status: "ok", message: "CAC Possibility API is running." });
 });
 
-// Public configuration check so a misconfigured deployment can be diagnosed
-// from a browser. Reports booleans and problems only, never secret values.
-app.get("/api/health", async (req, res) => {
-    const status = getAdminSetupStatus();
-
-    let database = "ok";
+async function databaseStatus() {
     try {
         await query("SELECT 1");
+        return { ok: true, error: null };
     } catch (error) {
-        database = `unreachable: ${error.message}`;
+        return { ok: false, error: error.message };
     }
+}
 
-    const emailConfigured = Boolean(process.env.EMAIL_USER && process.env.EMAIL_PASS);
+// Public configuration check so a misconfigured deployment can be diagnosed
+// from a browser. Reports booleans only: no error text, which can contain
+// hostnames, and nothing about the admin password's strength, which would
+// tell an attacker whether guessing it is worthwhile.
+app.get("/api/health", async (req, res) => {
+    const status = getAdminSetupStatus();
+    const database = await databaseStatus();
     const authDisabled = isAuthDisabled();
-    const ready = database === "ok" && (status.ok || authDisabled);
+    const ready = database.ok && (status.ok || authDisabled);
 
     res.status(ready ? 200 : 503).json({
         status: ready ? "ok" : "needs-attention",
-        database,
-        startupError: startupError ? startupError.message : null,
+        database: database.ok ? "ok" : "unreachable",
+        startupFailed: Boolean(startupError),
         storage: isBlobStorage ? "vercel-blob" : "local-disk",
         authSecretConfigured: Boolean(process.env.AUTH_SECRET),
         authDisabled,
         adminAccount: status.ok ? "created" : "missing",
         adminProblem: status.problem,
+        contactEmailConfigured: Boolean(process.env.EMAIL_USER && process.env.EMAIL_PASS),
+    });
+});
+
+// The same check with the detail an administrator needs to fix a problem.
+app.get("/api/health/details", requireAuth, async (req, res) => {
+    const status = getAdminSetupStatus();
+    const database = await databaseStatus();
+
+    res.json({
+        database: database.ok ? "ok" : `unreachable: ${database.error}`,
+        startupError: startupError ? startupError.message : null,
         passwordWarning: status.passwordWarning,
-        contactEmailConfigured: emailConfigured,
     });
 });
 
@@ -166,7 +275,7 @@ app.get("/api/config", (req, res) => {
 });
 
 // --- AUTH ENDPOINTS ---
-app.post("/api/auth/login", async (req, res) => {
+app.post("/api/auth/login", loginLimit, async (req, res) => {
     const { password } = req.body || {};
     const admin = await authenticate(password);
 
@@ -176,7 +285,9 @@ app.post("/api/auth/login", async (req, res) => {
             // Distinguish "the deployment is misconfigured" from "wrong
             // password", otherwise this looks like a failed login forever.
             return res.status(503).json({
-                error: status.problem,
+                error:
+                    status.problem ||
+                    "The server is still starting up. Please try again in a moment.",
                 code: "ADMIN_NOT_CONFIGURED",
             });
         }
@@ -191,7 +302,7 @@ app.get("/api/auth/session", requireAuth, (req, res) => {
 
 // Changing the password retires every existing session, including this one, so
 // the response carries a freshly signed token for the new version.
-app.post("/api/auth/password", requireAuth, async (req, res) => {
+app.post("/api/auth/password", requireAuth, passwordLimit, async (req, res) => {
     const { currentPassword, newPassword } = req.body || {};
 
     const result = await changePassword(currentPassword, newPassword);
@@ -233,14 +344,14 @@ app.post("/api/blob-upload", async (req, res) => {
     try {
         // The blob client cannot send the admin bearer token, so the dashboard
         // first exchanges its session for a short-lived single-category grant
-        // and passes it as a query parameter instead.
+        // and passes it as a query parameter instead. A bearer token is still
+        // accepted, but only if it survives a password change like any other.
         if (type === "blob.generate-client-token") {
-            const category = body.payload?.clientPayload?.category;
-            const header = req.headers.authorization || "";
-            const bearer = header.startsWith("Bearer ") ? header.slice(7) : null;
+            const { category } = parseClientPayload(body.payload?.clientPayload);
             const grant = String(req.query.grant || "");
             const authorized =
-                verifyToken(bearer) || (grant ? verifyUploadGrant(grant, category) : null);
+                (await verifySession(bearerToken(req))) ||
+                (grant ? verifyUploadGrant(grant, category) : null);
             if (!authorized) {
                 return res.status(401).json({ error: "Authentication required" });
             }
@@ -258,16 +369,18 @@ app.post("/api/blob-upload", async (req, res) => {
             body,
             request,
             onBeforeGenerateToken: async (pathname, clientPayload) => {
-                const category = clientPayload?.category;
+                const { category } = parseClientPayload(clientPayload);
                 if (!isValidCategory(category)) {
                     throw new Error("Unknown upload category.");
                 }
                 return {
-                    addRandomSuffix: false,
+                    // Phones name every photo IMG_0001.jpg or image.jpg, and
+                    // Vercel Blob refuses to overwrite an existing pathname,
+                    // so every upload gets a unique suffix.
+                    addRandomSuffix: true,
                     ...uploadLimits(category),
                 };
             },
-            onUploadCompleted: async () => {},
         });
 
         // handleUpload returns a plain object ({ type, clientToken } or
@@ -294,7 +407,8 @@ app.post(
     galleryUpload.single(GALLERY_FIELD),
     async (req, res) => {
         try {
-            const { date, imageUrl: existingUrl } = req.body || {};
+            const date = textField(req.body, "date");
+            const existingUrl = textField(req.body, "imageUrl");
 
             // The browser may have uploaded straight to blob already, in which
             // case the dashboard sends a JSON body with the URL and no file.
@@ -303,8 +417,16 @@ app.post(
                 return badRequest(res, "No image uploaded");
             }
 
+            const problem =
+                lengthError({ date }) ||
+                (existingUrl && !isSafeMediaUrl(existingUrl) ? "Invalid image URL." : null);
+            if (problem) {
+                discardUpload(req.file);
+                return badRequest(res, problem);
+            }
+
             const imageUrl = existingUrl || (await storeUpload("gallery", req.file));
-            const photoDate = date || new Date().toISOString().split("T")[0];
+            const photoDate = date || today();
 
             const result = await run(
                 "INSERT INTO gallery (imageUrl, date) VALUES (?, ?)",
@@ -334,7 +456,7 @@ app.delete("/api/gallery/:id", requireAuth, async (req, res) => {
 // --- EVENTS ENDPOINTS ---
 app.get("/api/events", async (req, res) => {
     try {
-        const events = await query("SELECT * FROM events ORDER BY date ASC, id ASC");
+        const events = await query("SELECT * FROM events ORDER BY date ASC, time ASC, id ASC");
         res.json(events);
     } catch (err) {
         serverError(res, err);
@@ -347,11 +469,23 @@ app.post(
     eventsUpload.single(EVENTS_FIELD),
     async (req, res) => {
         try {
-            const { title, description, date, time, flyerUrl: existingUrl } = req.body || {};
+            const fields = {
+                title: textField(req.body, "title"),
+                description: textField(req.body, "description"),
+                date: textField(req.body, "date"),
+                time: textField(req.body, "time"),
+            };
+            const existingUrl = textField(req.body, "flyerUrl");
 
-            if (!title || !date || !time) {
+            const problem =
+                (!fields.title || !fields.date || !fields.time
+                    ? "Title, date and time are required"
+                    : null) ||
+                lengthError(fields) ||
+                (existingUrl && !isSafeMediaUrl(existingUrl) ? "Invalid flyer URL." : null);
+            if (problem) {
                 discardUpload(req.file);
-                return badRequest(res, "Title, date and time are required");
+                return badRequest(res, problem);
             }
 
             const flyerUrl = existingUrl
@@ -360,15 +494,16 @@ app.post(
                   ? await storeUpload("events", req.file)
                   : null;
 
+            const { title, description, date, time } = fields;
             const result = await run(
                 "INSERT INTO events (title, description, date, time, flyerUrl) VALUES (?, ?, ?, ?, ?)",
-                [title, description || "", date, time, flyerUrl]
+                [title, description, date, time, flyerUrl]
             );
 
             res.status(201).json({
                 id: result.lastID,
                 title,
-                description: description || "",
+                description,
                 date,
                 time,
                 flyerUrl,
@@ -408,18 +543,25 @@ app.post(
     sermonsUpload.single(SERMONS_FIELD),
     async (req, res) => {
         try {
-            if (!req.file && !req.body?.audioUrl) {
+            const title = textField(req.body, "title");
+            const date = textField(req.body, "date");
+            const existingUrl = textField(req.body, "audioUrl");
+
+            if (!req.file && !existingUrl) {
                 return badRequest(res, "No audio file uploaded");
             }
 
-            const { title, date, audioUrl: existingUrl } = req.body || {};
-            if (!title) {
+            const problem =
+                (!title ? "Sermon title is required" : null) ||
+                lengthError({ title, date }) ||
+                (existingUrl && !isSafeMediaUrl(existingUrl) ? "Invalid sermon link." : null);
+            if (problem) {
                 discardUpload(req.file);
-                return badRequest(res, "Sermon title is required");
+                return badRequest(res, problem);
             }
 
             const audioUrl = existingUrl || (await storeUpload("sermons", req.file));
-            const sermonDate = date || new Date().toISOString().split("T")[0];
+            const sermonDate = date || today();
 
             const result = await run(
                 "INSERT INTO sermons (title, date, audioUrl) VALUES (?, ?, ?)",
@@ -474,8 +616,14 @@ const NAME_MAX = 300;
 const EMAIL_MAX = 254;
 const MESSAGE_MAX = 5000;
 
-app.post("/api/contact", async (req, res) => {
-    const { name, email, message } = req.body || {};
+app.post("/api/contact", contactLimit, async (req, res) => {
+    const { name, email, message, website } = req.body || {};
+
+    // Honeypot: `website` is a field hidden from people but filled in by most
+    // spam bots. Report success so the bot moves on, and send nothing.
+    if (typeof website === "string" && website.trim() !== "") {
+        return res.json({ message: "Thanks — your message has been sent." });
+    }
 
     const senderName = typeof name === "string" ? name.trim() : "";
     const senderEmail = typeof email === "string" ? email.trim() : "";
@@ -565,17 +713,9 @@ app.use((err, req, res, _next) => {
 });
 
 // Create tables/indexes and the first admin account on cold start, so a fresh
-// database just works.
-//
-// Neither step is allowed to throw: on Vercel a throw here means the function
-// never finishes booting, which takes down every route including the static-
-// backed public content. A failure is reported through `/api/health` instead.
-try {
-    await ensureSchema();
-    await ensureAdminAccount();
-} catch (error) {
-    startupError = error;
-    console.error("[startup] Database initialisation failed:", error);
-}
+// database just works. This never throws: on Vercel a throw here means the
+// function never finishes booting, which takes down every route. A failure is
+// reported through `/api/health` and retried on the next request instead.
+await initialise();
 
 export default app;

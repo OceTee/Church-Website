@@ -3,7 +3,6 @@ import crypto from "crypto";
 import { query, run } from "./db.js";
 import { hashPassword, verifyHashedPassword, passwordWarning, DEFAULT_PASSWORD } from "./passwords.js";
 
-const DEFAULT_SECRET = "cac-possibility-dev-secret-change-me";
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
 
 // A missing AUTH_SECRET must never take the whole site down: the public pages,
@@ -13,11 +12,7 @@ const IS_PRODUCTION = process.env.NODE_ENV === "production";
 // forged. The trade-off is that sessions do not survive a cold start, which is
 // why the warning below is loud.
 const USING_GENERATED_SECRET = !process.env.AUTH_SECRET;
-const SECRET =
-    process.env.AUTH_SECRET ||
-    (USING_GENERATED_SECRET
-        ? crypto.randomBytes(48).toString("hex")
-        : DEFAULT_SECRET);
+const SECRET = process.env.AUTH_SECRET || crypto.randomBytes(48).toString("hex");
 
 const TOKEN_TTL_MS = 1000 * 60 * 60 * 12; // 12 hours
 
@@ -128,9 +123,11 @@ export async function ensureAdminAccount() {
         console.warn(`[auth] ${warning}`);
     }
 
+    // Two cold starts can race to create the account on an empty database.
+    // The loser's insert becomes a no-op instead of a UNIQUE violation.
     const { hash, salt } = await hashPassword(seed);
     await run(
-        "INSERT INTO admins (username, passwordHash, passwordSalt, passwordVersion) VALUES (?, ?, ?, 1)",
+        "INSERT INTO admins (username, passwordHash, passwordSalt, passwordVersion) VALUES (?, ?, ?, 1) ON CONFLICT(username) DO NOTHING",
         ["admin", hash, salt]
     );
 
@@ -277,6 +274,21 @@ export function verifyToken(token) {
     return payload?.role === "admin" ? payload : null;
 }
 
+/**
+ * Full session check: a valid signature AND the current password version, so
+ * a token issued before a password change is rejected everywhere it is used.
+ */
+export async function verifySession(token) {
+    const payload = verifyToken(token);
+    if (!payload) return null;
+    return Number(payload.ver) === (await getAdminVersion()) ? payload : null;
+}
+
+export function bearerToken(req) {
+    const header = req.headers.authorization || "";
+    return header.startsWith("Bearer ") ? header.slice(7) : null;
+}
+
 const UPLOAD_GRANT_TTL_MS = 1000 * 60 * 5; // 5 minutes
 
 /**
@@ -306,17 +318,14 @@ export async function requireAuth(req, res, next) {
         return next();
     }
 
-    const header = req.headers.authorization || "";
-    const token = header.startsWith("Bearer ") ? header.slice(7) : null;
-    const payload = verifyToken(token);
-
-    if (!payload) {
+    const token = bearerToken(req);
+    if (!verifyToken(token)) {
         return res.status(401).json({ error: "Authentication required" });
     }
 
     // A password change bumps the version, which retires older tokens.
-    const currentVersion = await getAdminVersion();
-    if (Number(payload.ver) !== currentVersion) {
+    const payload = await verifySession(token);
+    if (!payload) {
         return res.status(401).json({ error: "Your session has expired. Please sign in again." });
     }
 
