@@ -142,7 +142,7 @@ export default function SermonManager({ sermons, onChanged, onError }) {
                 type="file"
                 accept="image/*"
                 onChange={(event) => choosePhoto(event.target.files[0] || null)}
-                className="min-w-0 font-inter text-sm"
+                className="min-w-0 font-nunito text-sm"
               />
             </div>
           </div>
@@ -156,7 +156,7 @@ export default function SermonManager({ sermons, onChanged, onError }) {
             <button
               type="button"
               onClick={() => setShowPreview((shown) => !shown)}
-              className="inline-flex items-center gap-1.5 font-inter text-sm text-[#65007f] hover:underline"
+              className="inline-flex items-center gap-1.5 font-nunito text-sm text-[#65007f] hover:underline"
             >
               {showPreview ? <EyeOff size={16} /> : <Eye size={16} />}
               {showPreview ? "Hide preview" : "Preview"}
@@ -171,7 +171,7 @@ export default function SermonManager({ sermons, onChanged, onError }) {
             onChange={(event) => update("body", event.target.value)}
             placeholder="Type or paste the sermon here."
           />
-          <p className="mt-1 font-inter text-xs text-gray-500">
+          <p className="mt-1 font-nunito text-xs text-gray-500">
             Leave a blank line between paragraphs. Start a line with{" "}
             <code className="rounded bg-gray-100 px-1">## </code> for a section heading, or{" "}
             <code className="rounded bg-gray-100 px-1">&gt; </code> for a scripture quotation.
@@ -181,7 +181,7 @@ export default function SermonManager({ sermons, onChanged, onError }) {
               {form.body.trim() ? (
                 <SermonBody text={form.body} />
               ) : (
-                <p className="font-inter text-sm italic text-gray-400">Nothing to preview yet.</p>
+                <p className="font-nunito text-sm italic text-gray-400">Nothing to preview yet.</p>
               )}
             </div>
           )}
@@ -192,9 +192,9 @@ export default function SermonManager({ sermons, onChanged, onError }) {
         </button>
       </form>
 
-      <h3 className="mb-4 border-b pb-2 font-inter font-semibold text-gray-700">Sermons</h3>
+      <h3 className="mb-4 border-b pb-2 font-nunito font-semibold text-gray-700">Sermons</h3>
       {sermons.length === 0 ? (
-        <p className="font-inter italic text-gray-400">No sermons added yet.</p>
+        <p className="font-nunito italic text-gray-400">No sermons added yet.</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {sermons.map((sermon) => (
@@ -207,8 +207,8 @@ export default function SermonManager({ sermons, onChanged, onError }) {
                   initialsClassName="text-sm"
                 />
                 <div className="min-w-0">
-                  <h4 className="truncate font-inter font-bold text-[#330040]">{sermon.title}</h4>
-                  <p className="truncate font-inter text-sm text-gray-500">
+                  <h4 className="truncate font-nunito font-bold text-[#330040]">{sermon.title}</h4>
+                  <p className="truncate font-nunito text-sm text-gray-500">
                     {[sermon.speaker, formatDate(sermon.date)].filter(Boolean).join(" · ")}
                   </p>
                 </div>
@@ -216,7 +216,7 @@ export default function SermonManager({ sermons, onChanged, onError }) {
               <div className="flex shrink-0 items-center gap-2">
                 <Link
                   to={`/sermons/${sermon.id}`}
-                  className="rounded-lg border border-[#65007f]/20 px-3 py-2 font-inter text-sm text-[#65007f] transition hover:bg-[#65007f]/5"
+                  className="rounded-lg border border-[#65007f]/20 px-3 py-2 font-nunito text-sm text-[#65007f] transition hover:bg-[#65007f]/5"
                 >
                   View
                 </Link>

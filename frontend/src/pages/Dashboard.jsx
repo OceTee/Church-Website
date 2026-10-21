@@ -89,7 +89,7 @@ export default function Dashboard() {
           <button
             type="button"
             onClick={handleSignOut}
-            className="flex shrink-0 items-center gap-2 rounded-full border border-[#65007f] px-4 py-2 font-inter text-sm text-[#65007f] transition hover:bg-[#65007f] hover:text-white"
+            className="flex shrink-0 items-center gap-2 rounded-full border border-[#65007f] px-4 py-2 font-nunito text-sm text-[#65007f] transition hover:bg-[#65007f] hover:text-white"
           >
             <LogOut size={16} />
             Sign out
@@ -97,7 +97,7 @@ export default function Dashboard() {
         </div>
 
         {authDisabled && (
-          <p className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 font-inter text-sm text-amber-800">
+          <p className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 font-nunito text-sm text-amber-800">
             <ShieldAlert size={18} className="mt-0.5 shrink-0" />
             <span>
               Authentication is disabled on this server (<code>AUTH_DISABLED</code>),
@@ -108,7 +108,7 @@ export default function Dashboard() {
         )}
 
         {error && (
-          <p className="rounded-lg bg-red-50 px-4 py-3 font-inter text-sm text-red-600">
+          <p className="rounded-lg bg-red-50 px-4 py-3 font-nunito text-sm text-red-600">
             {error}
           </p>
         )}

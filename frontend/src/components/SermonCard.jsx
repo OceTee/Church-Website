@@ -15,11 +15,11 @@ export default function SermonCard({ sermon }) {
     >
       <div className="flex flex-1 flex-col gap-[0.618rem]">
         {sermon.date && (
-          <p className="font-inter text-xs font-semibold uppercase tracking-[0.162em] text-[#9550a7]">
+          <p className="font-nunito text-xs font-semibold uppercase tracking-[0.162em] text-[#9550a7]">
             {formatDate(sermon.date)}
           </p>
         )}
-        <h2 className="font-playfair text-gr-md font-bold leading-snug text-[#330040] transition group-hover:text-[#65007f] md:text-gr-lg">
+        <h2 className="font-palatino text-gr-md font-bold leading-snug text-[#330040] transition group-hover:text-[#65007f] md:text-gr-lg">
           {sermon.title}
         </h2>
       </div>
@@ -32,7 +32,7 @@ export default function SermonCard({ sermon }) {
           initialsClassName="text-gr-md"
         />
         {sermon.speaker && (
-          <p className="font-inter text-sm font-medium text-gray-600">{sermon.speaker}</p>
+          <p className="font-nunito text-sm font-medium text-gray-600">{sermon.speaker}</p>
         )}
       </div>
     </Link>

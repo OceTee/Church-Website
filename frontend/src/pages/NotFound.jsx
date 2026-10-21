@@ -11,7 +11,7 @@ export default function NotFound() {
       />
       <Link
         to="/"
-        className="mt-8 flex items-center gap-2 rounded-full bg-[#65007f] px-6 py-3 font-inter text-white transition hover:bg-[#500066]"
+        className="mt-8 flex items-center gap-2 rounded-full bg-[#65007f] px-6 py-3 font-nunito text-white transition hover:bg-[#500066]"
       >
         <Home size={18} />
         Back to Home

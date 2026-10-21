@@ -55,7 +55,7 @@ export default function GiveOverlay({ isOpen, onClose }) {
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
       <div
-        className="relative w-full max-w-md rounded-2xl bg-white p-6 font-inter shadow-2xl sm:p-8"
+        className="relative w-full max-w-md rounded-2xl bg-white p-6 font-nunito shadow-2xl sm:p-8"
         onClick={(event) => event.stopPropagation()}
       >
         <button
@@ -68,7 +68,7 @@ export default function GiveOverlay({ isOpen, onClose }) {
         </button>
 
         <div className="mb-8 text-center">
-          <h2 className="font-playfair text-3xl font-bold text-[#330040]">Give</h2>
+          <h2 className="font-palatino text-3xl font-bold text-[#330040]">Give</h2>
           <p className="mt-2 text-sm text-gray-500">
             Thank you for supporting the work of the ministry.
           </p>

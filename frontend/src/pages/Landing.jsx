@@ -9,7 +9,7 @@ import { apiJson } from "../lib/api";
 import { upcomingEvents } from "../lib/events";
 
 const EMPTY_MESSAGE =
-  "rounded-xl border border-gray-200 bg-gray-50 py-8 text-center font-inter italic text-gray-500";
+  "rounded-xl border border-gray-200 bg-gray-50 py-8 text-center font-nunito italic text-gray-500";
 
 const LANDING_EVENT_COUNT = 3;
 
@@ -57,19 +57,19 @@ export default function Landing() {
 
       <section className="w-[90%] max-w-5xl pb-20 pt-16">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-          <h2 className="font-playfair text-2xl font-bold text-[#330040] md:text-3xl">
+          <h2 className="font-palatino text-2xl font-bold text-[#330040] md:text-3xl">
             Recent Sermons
           </h2>
           <Link
             to="/sermons"
-            className="flex items-center gap-2 font-inter text-sm text-[#65007f] transition duration-150 hover:scale-105 md:text-base"
+            className="flex items-center gap-2 font-nunito text-sm text-[#65007f] transition duration-150 hover:scale-105 md:text-base"
           >
             View all <ArrowRightToLine size={18} />
           </Link>
         </div>
 
         {loading ? (
-          <p className="font-inter text-gray-500">Loading...</p>
+          <p className="font-nunito text-gray-500">Loading...</p>
         ) : sermons.length === 0 ? (
           <p className={EMPTY_MESSAGE}>No recent sermons available.</p>
         ) : (
@@ -83,19 +83,19 @@ export default function Landing() {
         )}
 
         <div className="mb-6 mt-14 flex flex-wrap items-end justify-between gap-3">
-          <h2 className="font-playfair text-2xl font-bold text-[#330040] md:text-3xl">
+          <h2 className="font-palatino text-2xl font-bold text-[#330040] md:text-3xl">
             Upcoming Events
           </h2>
           <Link
             to="/events"
-            className="font-inter text-sm text-[#65007f] transition duration-150 hover:scale-105 md:text-base"
+            className="font-nunito text-sm text-[#65007f] transition duration-150 hover:scale-105 md:text-base"
           >
             Full calendar
           </Link>
         </div>
 
         {loading ? (
-          <p className="font-inter text-gray-500">Loading...</p>
+          <p className="font-nunito text-gray-500">Loading...</p>
         ) : events.length === 0 ? (
           <p className={EMPTY_MESSAGE}>No upcoming events right now.</p>
         ) : (

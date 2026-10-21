@@ -95,7 +95,7 @@ export default function ImageLightbox({ photos, index, onClose, onPrev, onNext }
               alt={photo.date || "Gallery photo"}
               className="max-h-[80vh] w-auto max-w-full rounded-lg object-contain shadow-2xl"
             />
-            <figcaption className="flex items-center gap-3 font-inter text-sm text-white/80">
+            <figcaption className="flex items-center gap-3 font-nunito text-sm text-white/80">
               <span>{photo.date}</span>
               {photos.length > 1 && (
                 <span className="text-white/40">

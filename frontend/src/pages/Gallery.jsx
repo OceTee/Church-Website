@@ -59,13 +59,13 @@ export default function Gallery() {
         />
 
         {loading ? (
-          <p className="font-inter text-gray-500">Loading gallery...</p>
+          <p className="font-nunito text-gray-500">Loading gallery...</p>
         ) : failed ? (
-          <div className="rounded-2xl border border-gray-200 bg-gray-50 py-20 text-center font-inter italic text-gray-500">
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 py-20 text-center font-nunito italic text-gray-500">
             The gallery could not be loaded just now. Please try again shortly.
           </div>
         ) : photos.length === 0 ? (
-          <div className="rounded-2xl border border-gray-200 bg-gray-50 py-20 text-center font-inter italic text-gray-500">
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 py-20 text-center font-nunito italic text-gray-500">
             No photos added yet. Check back soon!
           </div>
         ) : (
@@ -94,7 +94,7 @@ export default function Gallery() {
                 <span className="absolute right-3 top-3 rounded-full bg-black/50 p-2 text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
                   <Maximize2 size={16} />
                 </span>
-                <figcaption className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 via-transparent to-transparent p-4 font-inter text-sm text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                <figcaption className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 via-transparent to-transparent p-4 font-nunito text-sm text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
                   {photo.date}
                 </figcaption>
               </figure>

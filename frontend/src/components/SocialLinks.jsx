@@ -17,7 +17,7 @@ export default function SocialLinks({ className = "" }) {
         const Icon = ICONS[icon] || Globe;
         const isExternal = /^https?:\/\//i.test(href);
         const linkClasses =
-          "flex items-center gap-2 font-inter text-sm text-gray-400 transition duration-150 hover:text-white";
+          "flex items-center gap-2 font-nunito text-sm text-gray-400 transition duration-150 hover:text-white";
 
         if (isExternal) {
           return (

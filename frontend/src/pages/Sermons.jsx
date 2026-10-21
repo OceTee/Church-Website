@@ -38,13 +38,13 @@ export default function Sermons() {
         />
 
         {loading ? (
-          <p className="font-inter text-gray-500">Loading sermons...</p>
+          <p className="font-nunito text-gray-500">Loading sermons...</p>
         ) : failed ? (
-          <div className="rounded-2xl border border-gray-200 bg-gray-50 py-20 text-center font-inter italic text-gray-500">
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 py-20 text-center font-nunito italic text-gray-500">
             Sermons could not be loaded just now. Please try again shortly.
           </div>
         ) : sermons.length === 0 ? (
-          <div className="rounded-2xl border border-gray-200 bg-gray-50 py-20 text-center font-inter italic text-gray-500">
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 py-20 text-center font-nunito italic text-gray-500">
             No sermons have been published yet. Check back later!
           </div>
         ) : (

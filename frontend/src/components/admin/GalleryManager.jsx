@@ -74,7 +74,7 @@ export default function GalleryManager({ photos, onChanged, onError }) {
                   file: event.target.files[0] || null,
                 }))
               }
-              className="font-inter text-sm"
+              className="font-nunito text-sm"
             />
           </div>
           <div>
@@ -102,11 +102,11 @@ export default function GalleryManager({ photos, onChanged, onError }) {
         </button>
       </form>
 
-      <h3 className="mb-4 border-b pb-2 font-inter font-semibold text-gray-700">
+      <h3 className="mb-4 border-b pb-2 font-nunito font-semibold text-gray-700">
         Current Photos
       </h3>
       {photos.length === 0 ? (
-        <p className="font-inter italic text-gray-400">No photos uploaded.</p>
+        <p className="font-nunito italic text-gray-400">No photos uploaded.</p>
       ) : (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {photos.map((photo) => (
@@ -123,7 +123,7 @@ export default function GalleryManager({ photos, onChanged, onError }) {
               {/* Always visible: a hover-only button cannot be seen on a
                   phone but can still be tapped by accident. */}
               <figcaption className="flex items-center justify-between gap-2 p-2">
-                <p className="truncate font-inter text-xs text-gray-600">{photo.date}</p>
+                <p className="truncate font-nunito text-xs text-gray-600">{photo.date}</p>
                 <button
                   type="button"
                   onClick={() => handleDelete(photo)}

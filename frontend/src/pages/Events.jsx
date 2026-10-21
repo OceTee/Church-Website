@@ -39,13 +39,13 @@ export default function Events() {
         />
 
         {loading ? (
-          <p className="font-inter text-gray-500">Loading events...</p>
+          <p className="font-nunito text-gray-500">Loading events...</p>
         ) : failed ? (
-          <div className="rounded-2xl border border-gray-200 bg-gray-50 py-16 text-center font-inter italic text-gray-500">
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 py-16 text-center font-nunito italic text-gray-500">
             Events could not be loaded just now. Please try again shortly.
           </div>
         ) : events.length === 0 ? (
-          <div className="rounded-2xl border border-gray-200 bg-gray-50 py-16 text-center font-inter italic text-gray-500">
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 py-16 text-center font-nunito italic text-gray-500">
             No upcoming events right now. Check back soon!
           </div>
         ) : (

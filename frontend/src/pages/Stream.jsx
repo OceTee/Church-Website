@@ -21,7 +21,7 @@ export default function Stream() {
               allowFullScreen
             />
           </div>
-          <p className="mt-4 text-center font-inter text-sm text-gray-500">
+          <p className="mt-4 text-center font-nunito text-sm text-gray-500">
             Can't see the stream?{" "}
             <a
               href={site.youtube.url}

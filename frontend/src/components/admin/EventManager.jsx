@@ -139,7 +139,7 @@ export default function EventManager({ events, onChanged, onError }) {
               type="file"
               accept="image/*"
               onChange={(event) => update("flyer", event.target.files[0] || null)}
-              className="font-inter text-sm"
+              className="font-nunito text-sm"
             />
           </div>
           <button type="submit" disabled={busy} className={primaryButtonClass}>
@@ -148,20 +148,20 @@ export default function EventManager({ events, onChanged, onError }) {
         </div>
       </form>
 
-      <h3 className="mb-4 border-b pb-2 font-inter font-semibold text-gray-700">
+      <h3 className="mb-4 border-b pb-2 font-nunito font-semibold text-gray-700">
         Current Events
       </h3>
       {events.length === 0 ? (
-        <p className="font-inter italic text-gray-400">No events.</p>
+        <p className="font-nunito italic text-gray-400">No events.</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {events.map((event) => (
             <li key={event.id} className={listRowClass}>
               <div className="min-w-0">
-                <h4 className="truncate font-inter font-bold text-[#330040]">
+                <h4 className="truncate font-nunito font-bold text-[#330040]">
                   {event.title}
                 </h4>
-                <p className="font-inter text-sm text-gray-500">
+                <p className="font-nunito text-sm text-gray-500">
                   {formatEventDate(event.date)} at {formatEventTime(event.time)}
                   {isPastEvent(event) && (
                     <span className="ml-2 rounded-full bg-gray-200 px-2 py-0.5 text-xs font-semibold text-gray-600">

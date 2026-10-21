@@ -62,7 +62,7 @@ export default function Login() {
         />
 
         <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-5">
-          <label className="flex flex-col gap-2 font-inter text-sm font-semibold text-gray-700">
+          <label className="flex flex-col gap-2 font-nunito text-sm font-semibold text-gray-700">
             Password
             <input
               type="password"
@@ -76,7 +76,7 @@ export default function Login() {
           </label>
 
           {error && (
-            <p className="rounded-lg bg-red-50 px-3 py-2 font-inter text-sm text-red-600">
+            <p className="rounded-lg bg-red-50 px-3 py-2 font-nunito text-sm text-red-600">
               {error}
             </p>
           )}
@@ -84,7 +84,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={submitting}
-            className="flex items-center justify-center gap-2 rounded-full bg-[#65007f] px-6 py-3 font-inter text-white transition hover:bg-[#500066] disabled:opacity-60"
+            className="flex items-center justify-center gap-2 rounded-full bg-[#65007f] px-6 py-3 font-nunito text-white transition hover:bg-[#500066] disabled:opacity-60"
           >
             <LockKeyhole size={18} />
             {submitting ? "Signing in..." : "Sign In"}
@@ -95,7 +95,7 @@ export default function Login() {
           <button
             type="button"
             onClick={checkServer}
-            className="font-inter text-xs text-gray-500 underline hover:text-[#65007f]"
+            className="font-nunito text-xs text-gray-500 underline hover:text-[#65007f]"
           >
             Having trouble signing in? Check the server
           </button>
@@ -114,7 +114,7 @@ export default function Login() {
 
         <Link
           to="/"
-          className="mt-6 block text-center font-inter text-sm text-[#65007f] hover:underline"
+          className="mt-6 block text-center font-nunito text-sm text-[#65007f] hover:underline"
         >
           Back to home
         </Link>

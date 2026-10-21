@@ -48,7 +48,7 @@ export default function PasswordManager() {
     <section className={cardClass}>
       <h2 className={sectionTitleClass}>Change Admin Password</h2>
 
-      <p className="-mt-4 mb-6 font-inter text-sm text-gray-500">
+      <p className="-mt-4 mb-6 font-nunito text-sm text-gray-500">
         This signs you out of every other device and browser session.
       </p>
 
@@ -102,13 +102,13 @@ export default function PasswordManager() {
         </div>
 
         {error && (
-          <p className="rounded-lg bg-red-50 px-3 py-2 font-inter text-sm text-red-600">
+          <p className="rounded-lg bg-red-50 px-3 py-2 font-nunito text-sm text-red-600">
             {error}
           </p>
         )}
 
         {done && (
-          <p className="rounded-lg bg-green-50 px-3 py-2 font-inter text-sm text-green-700">
+          <p className="rounded-lg bg-green-50 px-3 py-2 font-nunito text-sm text-green-700">
             Password updated. Use your new password the next time you sign in.
           </p>
         )}

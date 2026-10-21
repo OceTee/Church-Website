@@ -45,28 +45,28 @@ export default function MiniCalendar({ title, sub, date: rawDate, time: rawTime,
         {/* Top right - yellow date badge only */}
         <div className="flex justify-end mb-auto">
           <div className="shrink-0 rounded-lg bg-[#ffd700] px-3 py-1.5 text-center">
-            <p className="font-inter text-xs font-bold leading-tight text-black">{date}</p>
-            <p className="font-inter text-[10px] font-medium text-black/70">{time || "Event"}</p>
+            <p className="font-nunito text-xs font-bold leading-tight text-black">{date}</p>
+            <p className="font-nunito text-[10px] font-medium text-black/70">{time || "Event"}</p>
           </div>
         </div>
 
         {/* Bottom - all text content stacked */}
         <div className="flex flex-col items-center gap-3 text-center px-4 pb-2">
           {/* Title */}
-          <h2 className="font-playfair text-xl font-bold leading-tight text-white md:text-2xl lg:text-3xl">
+          <h2 className="font-palatino text-xl font-bold leading-tight text-white md:text-2xl lg:text-3xl">
             {title}
           </h2>
 
           {/* Description */}
           {sub && (
-            <p className="max-w-[85%] font-inter text-sm leading-snug text-white/90 md:text-base">
+            <p className="max-w-[85%] font-nunito text-sm leading-snug text-white/90 md:text-base">
               {sub}
             </p>
           )}
 
           {/* Date and time at the very bottom */}
           <div className="flex items-center justify-center gap-3 text-white/90">
-            <span className="font-inter text-sm">{date}</span>
+            <span className="font-nunito text-sm">{date}</span>
             {time && <span className="text-white/70">{time}</span>}
           </div>
         </div>

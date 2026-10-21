@@ -22,14 +22,14 @@ export default class ErrorBoundary extends Component {
 
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-6 px-6 pt-32 pb-20 text-center">
-        <h1 className="font-playfair text-3xl font-bold text-[#330040] md:text-4xl">
+        <h1 className="font-palatino text-3xl font-bold text-[#330040] md:text-4xl">
           Something went wrong
         </h1>
-        <p className="max-w-md font-inter text-gray-600">
+        <p className="max-w-md font-nunito text-gray-600">
           This page could not be displayed. Please refresh, or try again in a
           few minutes.
         </p>
-        <div className="flex gap-3 font-inter">
+        <div className="flex gap-3 font-nunito">
           <button
             type="button"
             onClick={() => window.location.reload()}

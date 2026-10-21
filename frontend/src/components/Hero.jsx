@@ -107,14 +107,14 @@ export default function Hero({ events = [] }) {
             fetchPriority="high"
             className="mx-auto mb-[1.618rem] h-[6.854rem] w-auto lg:mb-[2.618rem] lg:h-[11.09rem]"
           />
-          <h1 className="font-playfair text-gr-xl font-bold leading-tight text-white lg:text-gr-2xl">
+          <h1 className="font-palatino text-gr-xl font-bold leading-tight text-white lg:text-gr-2xl">
             Welcome to {site.name}
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl font-inter text-lg text-white/90 md:text-gr-md">
+          <p className="mx-auto mt-4 max-w-2xl font-nunito text-lg text-white/90 md:text-gr-md">
             {site.tagline}
           </p>
 
-          <div className="mt-[2.618rem] flex flex-col justify-center gap-4 font-inter sm:flex-row">
+          <div className="mt-[2.618rem] flex flex-col justify-center gap-4 font-nunito sm:flex-row">
             <Link
               to="/stream"
               className="flex items-center justify-center gap-2 rounded-full bg-[#ffd700] px-7 py-3.5 text-black shadow-lg transition duration-100 hover:scale-105"
@@ -135,13 +135,13 @@ export default function Hero({ events = [] }) {
         {/* Current slide */}
         {hasSlides && (
           <div className="w-full max-w-3xl" aria-live={paused ? "polite" : "off"}>
-            <p className="font-inter text-xs font-semibold uppercase tracking-[0.2em] text-[#fde68a]">
+            <p className="font-nunito text-xs font-semibold uppercase tracking-[0.2em] text-[#fde68a]">
               Upcoming event
             </p>
-            <h2 className="mt-2 font-playfair text-2xl font-bold text-white md:text-3xl">
+            <h2 className="mt-2 font-palatino text-2xl font-bold text-white md:text-3xl">
               {current.title}
             </h2>
-            <p className="mt-1 font-inter text-white/85">
+            <p className="mt-1 font-nunito text-white/85">
               {formatEventDate(current.date)}
               {current.time ? ` • ${formatEventTime(current.time)}` : ""}
             </p>

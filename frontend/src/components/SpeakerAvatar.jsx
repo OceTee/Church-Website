@@ -26,7 +26,7 @@ export default function SpeakerAvatar({ name, src, className = "", initialsClass
       ) : (
         <span
           aria-label={name || "Speaker"}
-          className={`flex h-full w-full items-center justify-center font-playfair font-bold text-[#65007f] ${initialsClassName}`}
+          className={`flex h-full w-full items-center justify-center font-palatino font-bold text-[#65007f] ${initialsClassName}`}
         >
           {initials(name)}
         </span>

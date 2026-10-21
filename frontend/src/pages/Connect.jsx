@@ -51,10 +51,10 @@ export default function Connect() {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <div className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
             <MapPin className="text-[#65007f]" size={24} />
-            <h3 className="font-playfair text-xl font-semibold text-[#330040]">
+            <h3 className="font-palatino text-xl font-semibold text-[#330040]">
               Visit Us
             </h3>
-            <p className="font-inter text-sm leading-relaxed text-gray-600">
+            <p className="font-nunito text-sm leading-relaxed text-gray-600">
               {site.address.street}
               <br />
               {site.address.area}
@@ -70,12 +70,12 @@ export default function Connect() {
 
           <div className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
             <Mail className="text-[#65007f]" size={24} />
-            <h3 className="font-playfair text-xl font-semibold text-[#330040]">
+            <h3 className="font-palatino text-xl font-semibold text-[#330040]">
               Email
             </h3>
             <a
               href={`mailto:${site.contact.email}`}
-              className="break-all font-inter text-sm text-gray-600 hover:text-[#65007f]"
+              className="break-all font-nunito text-sm text-gray-600 hover:text-[#65007f]"
             >
               {site.contact.email}
             </a>
@@ -83,18 +83,18 @@ export default function Connect() {
 
           <div className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
             <Phone className="text-[#65007f]" size={24} />
-            <h3 className="font-playfair text-xl font-semibold text-[#330040]">
+            <h3 className="font-palatino text-xl font-semibold text-[#330040]">
               Call Us
             </h3>
             <a
               href={`tel:${site.contact.phone.replace(/\s/g, "")}`}
-              className="font-inter text-sm text-gray-600 hover:text-[#65007f]"
+              className="font-nunito text-sm text-gray-600 hover:text-[#65007f]"
             >
               {site.contact.phone}
             </a>
             <a
               href={`tel:${site.contact.phone2.replace(/\s/g, "")}`}
-              className="font-inter text-sm text-gray-600 hover:text-[#65007f]"
+              className="font-nunito text-sm text-gray-600 hover:text-[#65007f]"
             >
               {site.contact.phone2}
             </a>
@@ -102,12 +102,12 @@ export default function Connect() {
         </div>
 
         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
-          <h3 className="mb-4 font-playfair text-2xl font-semibold text-[#330040]">
+          <h3 className="mb-4 font-palatino text-2xl font-semibold text-[#330040]">
             Send us a message
           </h3>
 
           {submitted ? (
-            <p className="rounded-xl bg-green-50 px-4 py-6 text-center font-inter text-green-700">
+            <p className="rounded-xl bg-green-50 px-4 py-6 text-center font-nunito text-green-700">
               Thank you, {form.name || "friend"}! We have received your message and
               will get back to you soon.
             </p>
@@ -132,7 +132,7 @@ export default function Connect() {
                   onChange={handleChange}
                   required
                   placeholder="Your name"
-                  className="rounded-lg border border-gray-200 p-3 font-inter focus:border-[#9550a7] focus:outline-none"
+                  className="rounded-lg border border-gray-200 p-3 font-nunito focus:border-[#9550a7] focus:outline-none"
                 />
                 <input
                   name="email"
@@ -141,7 +141,7 @@ export default function Connect() {
                   onChange={handleChange}
                   required
                   placeholder="Your email"
-                  className="rounded-lg border border-gray-200 p-3 font-inter focus:border-[#9550a7] focus:outline-none"
+                  className="rounded-lg border border-gray-200 p-3 font-nunito focus:border-[#9550a7] focus:outline-none"
                 />
               </div>
               <textarea
@@ -151,24 +151,24 @@ export default function Connect() {
                 required
                 rows={5}
                 placeholder="How can we help?"
-                className="rounded-lg border border-gray-200 p-3 font-inter focus:border-[#9550a7] focus:outline-none"
+                className="rounded-lg border border-gray-200 p-3 font-nunito focus:border-[#9550a7] focus:outline-none"
               />
               <div className="flex flex-col gap-2">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="self-start rounded-full bg-[#65007f] px-6 py-3 font-inter text-white transition hover:bg-[#500066] disabled:opacity-70"
+                  className="self-start rounded-full bg-[#65007f] px-6 py-3 font-nunito text-white transition hover:bg-[#500066] disabled:opacity-70"
                 >
                   {isSubmitting ? "Sending..." : "Send Message"}
                 </button>
-                {error && <p className="text-red-500 font-inter text-sm">{error}</p>}
+                {error && <p className="text-red-500 font-nunito text-sm">{error}</p>}
               </div>
             </form>
           )}
         </div>
 
         <div className="rounded-2xl bg-[#330040] p-6 sm:p-8">
-          <h3 className="mb-4 font-playfair text-2xl font-semibold text-white">
+          <h3 className="mb-4 font-palatino text-2xl font-semibold text-white">
             Follow Us
           </h3>
           <SocialLinks />

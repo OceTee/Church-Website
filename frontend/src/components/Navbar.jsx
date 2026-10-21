@@ -35,7 +35,7 @@ export default function Navbar() {
           />
         </Link>
 
-        <ul className="hidden items-center gap-6 font-inter text-[var(--text-gr-base)] md:flex">
+        <ul className="hidden items-center gap-6 font-nunito text-[var(--text-gr-base)] md:flex">
           {NAV_LINKS.map(({ to, label }) => (
             <li key={to}>
               <NavLink to={to} end={to === "/"} className={desktopLinkClass}>
@@ -66,7 +66,7 @@ export default function Navbar() {
       </nav>
 
       {mobileMenuOpen && (
-        <div className="fixed left-0 top-[80px] z-30 flex w-full flex-col bg-[#9550a7] font-inter text-[var(--text-gr-base)] shadow-lg md:hidden">
+        <div className="fixed left-0 top-[80px] z-30 flex w-full flex-col bg-[#9550a7] font-nunito text-[var(--text-gr-base)] shadow-lg md:hidden">
           {NAV_LINKS.map(({ to, label }) => (
             <NavLink
               key={to}

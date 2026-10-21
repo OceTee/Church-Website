@@ -9,13 +9,13 @@ export default function SermonBody({ text }) {
   const blocks = parseSermonBody(text);
 
   return (
-    <div className="font-inter text-gr-base leading-[1.618] text-gray-700 md:text-[1.125rem]">
+    <div className="font-nunito text-gr-base leading-[1.618] text-gray-700 md:text-[1.125rem]">
       {blocks.map((block, index) => {
         if (block.type === "heading") {
           return (
             <h2
               key={index}
-              className="mb-4 mt-[2.618rem] font-playfair text-gr-lg font-bold leading-tight text-[#330040] first:mt-0"
+              className="mb-4 mt-[2.618rem] font-palatino text-gr-lg font-bold leading-tight text-[#330040] first:mt-0"
             >
               {block.text}
             </h2>
@@ -25,7 +25,7 @@ export default function SermonBody({ text }) {
           return (
             <blockquote
               key={index}
-              className="my-[1.618rem] whitespace-pre-line rounded-r-2xl border-l-4 border-[#ffd700] bg-[#f6eefa] px-[1.618rem] py-4 font-playfair text-gr-md italic leading-[1.618] text-[#330040] first:mt-0"
+              className="my-[1.618rem] whitespace-pre-line rounded-r-2xl border-l-4 border-[#ffd700] bg-[#f6eefa] px-[1.618rem] py-4 font-palatino text-gr-md italic leading-[1.618] text-[#330040] first:mt-0"
             >
               {block.text}
             </blockquote>

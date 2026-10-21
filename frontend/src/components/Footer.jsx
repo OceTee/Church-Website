@@ -9,7 +9,7 @@ export default function Footer() {
   const { open: openGive } = useGive();
 
   return (
-    <footer className="mt-auto bg-[#330040] px-6 py-10 font-inter text-gray-400 md:px-10">
+    <footer className="mt-auto bg-[#330040] px-6 py-10 font-nunito text-gray-400 md:px-10">
       <div className="mx-auto w-full max-w-5xl">
         <SocialLinks className="justify-center border-b border-white/10 pb-8 md:justify-start" />
 

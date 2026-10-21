@@ -53,22 +53,22 @@ export default function SermonDetail() {
       <div className="w-full max-w-[61.8rem]">
         <Link
           to="/sermons"
-          className="mb-[1.618rem] inline-flex items-center gap-2 font-inter text-sm text-[#65007f] hover:underline"
+          className="mb-[1.618rem] inline-flex items-center gap-2 font-nunito text-sm text-[#65007f] hover:underline"
         >
           <ArrowLeft size={16} />
           All sermons
         </Link>
 
-        {status === "loading" && <p className="font-inter text-gray-500">Loading sermon...</p>}
+        {status === "loading" && <p className="font-nunito text-gray-500">Loading sermon...</p>}
 
         {status === "missing" && (
-          <div className="rounded-2xl border border-gray-200 bg-gray-50 py-20 text-center font-inter italic text-gray-500">
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 py-20 text-center font-nunito italic text-gray-500">
             This sermon could not be found. It may have been removed.
           </div>
         )}
 
         {status === "failed" && (
-          <div className="rounded-2xl border border-gray-200 bg-gray-50 py-20 text-center font-inter italic text-gray-500">
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 py-20 text-center font-nunito italic text-gray-500">
             This sermon could not be loaded just now. Please try again shortly.
           </div>
         )}
@@ -77,11 +77,11 @@ export default function SermonDetail() {
           <article className="grid grid-cols-[1fr_auto] gap-x-[1.618rem] md:grid-cols-[1.618fr_1fr] gap-y-[2.618rem] rounded-[1.618rem] bg-white p-[1.618rem] shadow-sm md:gap-x-[2.618rem] md:p-[2.618rem]">
             <header className="col-start-1 row-start-1 flex flex-col gap-[0.618rem] self-center">
               {sermon.date && (
-                <p className="font-inter text-xs font-semibold uppercase tracking-[0.162em] text-[#9550a7]">
+                <p className="font-nunito text-xs font-semibold uppercase tracking-[0.162em] text-[#9550a7]">
                   {formatDate(sermon.date)}
                 </p>
               )}
-              <h1 className="font-playfair text-gr-lg font-bold leading-tight text-[#330040] md:text-gr-xl">
+              <h1 className="font-palatino text-gr-lg font-bold leading-tight text-[#330040] md:text-gr-xl">
                 {sermon.title}
               </h1>
             </header>
@@ -95,7 +95,7 @@ export default function SermonDetail() {
                   initialsClassName="text-gr-md sm:text-gr-lg md:text-gr-xl"
                 />
                 {sermon.speaker && (
-                  <figcaption className="max-w-[6.854rem] text-center font-inter text-xs font-semibold text-[#330040] sm:text-sm md:max-w-[11.09rem] md:text-base">
+                  <figcaption className="max-w-[6.854rem] text-center font-nunito text-xs font-semibold text-[#330040] sm:text-sm md:max-w-[11.09rem] md:text-base">
                     {sermon.speaker}
                   </figcaption>
                 )}
