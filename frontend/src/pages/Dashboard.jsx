@@ -6,6 +6,7 @@ import EventManager from "../components/admin/EventManager";
 import GalleryManager from "../components/admin/GalleryManager";
 import SermonManager from "../components/admin/SermonManager";
 import PasswordManager from "../components/admin/PasswordManager";
+import BirthdayManager from "../components/admin/BirthdayManager";
 import { apiFetch } from "../lib/api";
 import { getAuthMode, isAuthenticated, logout } from "../lib/auth";
 
@@ -14,6 +15,7 @@ export default function Dashboard() {
   const [photos, setPhotos] = useState([]);
   const [events, setEvents] = useState([]);
   const [sermons, setSermons] = useState([]);
+  const [birthdays, setBirthdays] = useState([]);
   const [error, setError] = useState("");
   const [authDisabled, setAuthDisabled] = useState(false);
 
@@ -40,25 +42,25 @@ export default function Dashboard() {
 
   const loadContent = useCallback(async () => {
     try {
-      const [photosResponse, eventsResponse, sermonsResponse] = await Promise.all([
+      const responses = await Promise.all([
         apiFetch("/gallery"),
         apiFetch("/events"),
         apiFetch("/sermons"),
+        apiFetch("/birthdays"),
       ]);
 
-      if (!photosResponse.ok || !eventsResponse.ok || !sermonsResponse.ok) {
+      if (responses.some((response) => !response.ok)) {
         throw new Error("Failed to load dashboard content.");
       }
 
-      const [photosData, eventsData, sermonsData] = await Promise.all([
-        photosResponse.json(),
-        eventsResponse.json(),
-        sermonsResponse.json(),
-      ]);
+      const [photosData, eventsData, sermonsData, birthdaysData] = await Promise.all(
+        responses.map((response) => response.json())
+      );
 
       setPhotos(photosData);
       setEvents(eventsData);
       setSermons(sermonsData);
+      setBirthdays(birthdaysData);
       setError("");
     } catch (err) {
       handleError(err);
@@ -117,6 +119,7 @@ export default function Dashboard() {
         <EventManager events={events} onChanged={loadContent} onError={handleError} />
         <GalleryManager photos={photos} onChanged={loadContent} onError={handleError} />
         <SermonManager sermons={sermons} onChanged={loadContent} onError={handleError} />
+        <BirthdayManager birthdays={birthdays} onChanged={loadContent} onError={handleError} />
       </div>
     </div>
   );

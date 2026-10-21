@@ -22,6 +22,7 @@ const UPLOAD_FIELDS = {
     gallery: { file: "image", url: "imageUrl" },
     events: { file: "flyer", url: "flyerUrl" },
     sermons: { file: "speakerImage", url: "speakerImageUrl" },
+    birthdays: { file: "photo", url: "photoUrl" },
 };
 
 let galleryCleanupQueue = Promise.resolve();

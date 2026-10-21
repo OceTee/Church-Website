@@ -5,6 +5,7 @@ import Hero from "../components/Hero";
 import ServiceSchedule from "../components/ServiceSchedule";
 import SermonCard from "../components/SermonCard";
 import MiniCalendar from "../components/MiniCalendar";
+import BirthdayCelebration from "../components/BirthdayCelebration";
 import { apiJson } from "../lib/api";
 import { upcomingEvents } from "../lib/events";
 
@@ -49,6 +50,7 @@ export default function Landing() {
 
   return (
     <div className="flex flex-col items-center">
+      <BirthdayCelebration />
       <Hero events={events} />
 
       <div className="w-[90%] max-w-5xl">

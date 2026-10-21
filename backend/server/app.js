@@ -137,10 +137,12 @@ if (!isBlobStorage) {
 const galleryUpload = createUpload("gallery");
 const eventsUpload = createUpload("events");
 const sermonsUpload = createUpload("sermons");
+const birthdaysUpload = createUpload("birthdays");
 
 const GALLERY_FIELD = uploadField("gallery");
 const EVENTS_FIELD = uploadField("events");
 const SERMONS_FIELD = uploadField("sermons");
+const BIRTHDAYS_FIELD = uploadField("birthdays");
 
 // Public endpoints that do real work per request get a per-IP budget. Without
 // one, the admin password can be guessed indefinitely and the contact form
@@ -173,6 +175,8 @@ const TEXT_LIMITS = {
     time: 50,
     speaker: 120,
     body: 100000,
+    name: 120,
+    wishes: 2000,
 };
 
 function badRequest(res, message) {
@@ -280,6 +284,7 @@ app.get("/api/config", (req, res) => {
             gallery: uploadLimits("gallery").maximumSizeInBytes,
             events: uploadLimits("events").maximumSizeInBytes,
             sermons: uploadLimits("sermons").maximumSizeInBytes,
+            birthdays: uploadLimits("birthdays").maximumSizeInBytes,
         },
     });
 });
@@ -811,6 +816,112 @@ app.delete("/api/sermons/:id", requireAuth, async (req, res) => {
         if (sermons.length > 0) {
             await removeStoredFile(sermons[0].speakerImageUrl);
             await run("DELETE FROM sermons WHERE id = ?", [req.params.id]);
+        }
+        res.json({ message: "Deleted successfully" });
+    } catch (err) {
+        serverError(res, err);
+    }
+});
+
+// --- BIRTHDAYS ENDPOINTS ---
+// A birthday is celebrated on the home page on its date, then deleted along
+// with its photo. "Today" here is the date in the UK, the westernmost of the
+// church's two locations: it is never ahead of Ibadan, so a birthday is only
+// removed once it is over in both places.
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const ISO_MONTH = /^\d{4}-\d{2}$/;
+
+function earliestChurchToday() {
+    return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
+}
+
+/**
+ * Deletes birthdays whose date has passed, and their photos. Run before every
+ * read, so expired rows never reach a visitor and need no scheduled job.
+ */
+async function purgePastBirthdays() {
+    const expired = await query("SELECT id, photoUrl FROM birthdays WHERE date < ?", [
+        earliestChurchToday(),
+    ]);
+    for (const birthday of expired) {
+        await removeStoredFile(birthday.photoUrl);
+        await run("DELETE FROM birthdays WHERE id = ?", [birthday.id]);
+    }
+}
+
+// Public: `?month=YYYY-MM` returns that month's birthdays, which the home page
+// requests for the current month. Without it, every upcoming birthday is
+// returned for the admin panel.
+app.get("/api/birthdays", async (req, res) => {
+    try {
+        await purgePastBirthdays();
+
+        const month = String(req.query.month || "");
+        if (month && !ISO_MONTH.test(month)) {
+            return badRequest(res, "month must be YYYY-MM.");
+        }
+
+        const birthdays = month
+            ? await query(
+                  "SELECT * FROM birthdays WHERE substr(date, 1, 7) = ? ORDER BY date ASC, id ASC",
+                  [month]
+              )
+            : await query("SELECT * FROM birthdays ORDER BY date ASC, id ASC");
+        res.json(birthdays);
+    } catch (err) {
+        serverError(res, err);
+    }
+});
+
+app.post(
+    "/api/birthdays",
+    requireAuth,
+    birthdaysUpload.single(BIRTHDAYS_FIELD),
+    async (req, res) => {
+        try {
+            const fields = {
+                name: textField(req.body, "name"),
+                wishes: textField(req.body, "wishes"),
+                date: textField(req.body, "date"),
+            };
+            const existingUrl = textField(req.body, "photoUrl");
+
+            const problem =
+                (!fields.name || !fields.wishes || !fields.date
+                    ? "The celebrant's name, birthday and wishes are required"
+                    : null) ||
+                (!req.file && !existingUrl ? "The celebrant's photo is required" : null) ||
+                lengthError(fields) ||
+                (!ISO_DATE.test(fields.date) ? "The birthday must be a date (YYYY-MM-DD)." : null) ||
+                (fields.date < earliestChurchToday() ? "That birthday has already passed." : null) ||
+                // The photo is always uploaded through the dashboard, so only
+                // a file in this site's own storage is accepted.
+                (existingUrl && !isManagedMediaUrl(existingUrl) ? "Invalid photo URL." : null);
+            if (problem) {
+                discardUpload(req.file);
+                return badRequest(res, problem);
+            }
+
+            const photoUrl = existingUrl || (await storeUpload("birthdays", req.file));
+            const { name, wishes, date } = fields;
+            const result = await run(
+                "INSERT INTO birthdays (name, wishes, photoUrl, date) VALUES (?, ?, ?, ?)",
+                [name, wishes, photoUrl, date]
+            );
+
+            res.status(201).json({ id: result.lastID, name, wishes, photoUrl, date });
+        } catch (err) {
+            serverError(res, err);
+        }
+    }
+);
+
+app.delete("/api/birthdays/:id", requireAuth, async (req, res) => {
+    try {
+        const birthdays = await query("SELECT * FROM birthdays WHERE id = ?", [req.params.id]);
+        if (birthdays.length > 0) {
+            await removeStoredFile(birthdays[0].photoUrl);
+            await run("DELETE FROM birthdays WHERE id = ?", [req.params.id]);
         }
         res.json({ message: "Deleted successfully" });
     } catch (err) {

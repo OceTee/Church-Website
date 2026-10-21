@@ -31,6 +31,18 @@ CREATE TABLE IF NOT EXISTS sermons (
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Members' birthdays, celebrated on the home page on `date` (YYYY-MM-DD).
+-- Rows, and their photos, are deleted once the date has passed; see
+-- purgePastBirthdays() in app.js.
+CREATE TABLE IF NOT EXISTS birthdays (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    wishes TEXT NOT NULL,
+    photoUrl TEXT NOT NULL,
+    date TEXT NOT NULL,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- One-off flags, e.g. that the placeholder sermon has been created, so it is
 -- not recreated after an admin deletes it.
 CREATE TABLE IF NOT EXISTS app_meta (
@@ -63,3 +75,4 @@ CREATE TABLE IF NOT EXISTS rate_limits (
 CREATE INDEX IF NOT EXISTS idx_gallery_createdAt ON gallery (createdAt DESC);
 CREATE INDEX IF NOT EXISTS idx_events_date ON events (date ASC);
 CREATE INDEX IF NOT EXISTS idx_sermons_createdAt ON sermons (createdAt DESC);
+CREATE INDEX IF NOT EXISTS idx_birthdays_date ON birthdays (date ASC);

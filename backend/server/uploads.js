@@ -44,6 +44,14 @@ export const CATEGORIES = {
         maxBytes: 8 * 1024 * 1024,
         label: "speaker photo",
     },
+    birthdays: {
+        directory: "birthdays",
+        field: "photo",
+        allowedMime: IMAGE_MIME,
+        allowedTypes: IMAGE_TYPES,
+        maxBytes: 8 * 1024 * 1024,
+        label: "celebrant photo",
+    },
 };
 
 export function isValidCategory(category) {
