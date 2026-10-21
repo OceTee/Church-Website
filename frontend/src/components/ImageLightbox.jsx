@@ -1,7 +1,6 @@
 import { useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
 
 export default function ImageLightbox({ photos, index, onClose, onPrev, onNext }) {
   const photo = index === null ? null : photos[index];
@@ -31,19 +30,14 @@ export default function ImageLightbox({ photos, index, onClose, onPrev, onNext }
   }, [photo, handleKeyDown]);
 
   return createPortal(
-    <AnimatePresence>
-      {photo && (
-        <motion.div
+    photo ? (
+        <div
           key="backdrop"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
           onClick={onClose}
           role="dialog"
           aria-modal="true"
           aria-label={photo.label || "Photo viewer"}
-          className="fixed inset-0 z-100 flex items-center justify-center bg-black/95 p-4 backdrop-blur-sm sm:p-8"
+          className="lightbox-backdrop fixed inset-0 z-100 flex items-center justify-center bg-black/95 p-4 backdrop-blur-sm sm:p-8"
         >
           <button
             type="button"
@@ -81,18 +75,15 @@ export default function ImageLightbox({ photos, index, onClose, onPrev, onNext }
             </>
           )}
 
-          <motion.figure
+          <figure
             key={photo.id}
-            initial={{ opacity: 0, scale: 0.94 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.98 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
             onClick={(event) => event.stopPropagation()}
-            className="flex max-h-full max-w-5xl flex-col items-center gap-4"
+            className="lightbox-photo flex max-h-full max-w-5xl flex-col items-center gap-4"
           >
             <img
               src={photo.fullUrl}
               alt={photo.label ? `Photo from ${photo.label}` : "Gallery photo"}
+              decoding="async"
               className="max-h-[80vh] w-auto max-w-full rounded-lg object-contain shadow-2xl"
             />
             <figcaption className="flex items-center gap-3 font-nunito text-sm text-white/80">
@@ -103,10 +94,9 @@ export default function ImageLightbox({ photos, index, onClose, onPrev, onNext }
                 </span>
               )}
             </figcaption>
-          </motion.figure>
-        </motion.div>
-      )}
-    </AnimatePresence>,
+          </figure>
+        </div>
+      ) : null,
     document.body
   );
 }

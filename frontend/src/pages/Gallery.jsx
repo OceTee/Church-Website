@@ -177,6 +177,7 @@ export default function Gallery() {
                               src={photo.fullUrl}
                               alt={photo.label ? `Photo from ${photo.label}` : "Gallery photo"}
                               loading="lazy"
+                              decoding="async"
                               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                             />
                             <span className="absolute right-3 top-3 rounded-full bg-black/50 p-2 text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">

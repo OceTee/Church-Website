@@ -1,5 +1,4 @@
 import { apiJson } from "./api";
-import { createWithUpload } from "./uploads";
 
 /**
  * Sermons are written text: a title, the speaker's name and photo, the date
@@ -22,7 +21,8 @@ export function fetchSermon(id) {
   return apiJson(`/sermons/${encodeURIComponent(id)}`);
 }
 
-export function createSermon({ title, speaker, date, body, photo }) {
+export async function createSermon({ title, speaker, date, body, photo }) {
+  const { createWithUpload } = await import("./uploads");
   return createWithUpload({
     category: "sermons",
     file: photo,

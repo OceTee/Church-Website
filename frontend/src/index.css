@@ -126,6 +126,42 @@
     animation: menu-arrive 320ms var(--ease-spring);
 }
 
+.birthday-panel {
+    animation: birthday-arrive 720ms var(--ease-spring) 400ms both;
+}
+
+.birthday-item {
+    animation: birthday-item-arrive 500ms var(--ease-finesse) calc(800ms + var(--birthday-index, 0) * 150ms) both;
+}
+
+.lightbox-backdrop {
+    animation: fade-in 180ms ease-out both;
+}
+
+.lightbox-photo {
+    animation: photo-arrive 240ms var(--ease-finesse) both;
+}
+
+@keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes birthday-arrive {
+    from { opacity: 0; transform: translateY(110%); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes birthday-item-arrive {
+    from { opacity: 0; transform: translateY(1.5rem); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes photo-arrive {
+    from { opacity: 0; transform: scale(0.94); }
+    to { opacity: 1; transform: scale(1); }
+}
+
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
     button:not(:disabled):active {
         transform: scale(0.98);

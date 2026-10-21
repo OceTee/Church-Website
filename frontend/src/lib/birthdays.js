@@ -1,5 +1,4 @@
 import { apiJson } from "./api";
-import { createWithUpload } from "./uploads";
 import { todayIso } from "./dates";
 
 /**
@@ -18,7 +17,8 @@ export function fetchAllBirthdays() {
   return apiJson("/birthdays");
 }
 
-export function createBirthday({ name, date, wishes, photo }) {
+export async function createBirthday({ name, date, wishes, photo }) {
+  const { createWithUpload } = await import("./uploads");
   return createWithUpload({
     category: "birthdays",
     file: photo,

@@ -13,7 +13,6 @@
     "@fontsource-variable/nunito": "^5.3.0",
     "@vercel/blob": "^2.8.0",
     "lucide-react": "^1.27.0",
-    "motion": "^12.42.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.11.0"

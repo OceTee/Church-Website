@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
 import { Cake, X } from "lucide-react";
 import Confetti from "./Confetti";
 import SpeakerAvatar from "./SpeakerAvatar";
@@ -67,18 +66,12 @@ export default function BirthdayCelebration() {
   return (
     <>
       {open && <Confetti />}
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            key="birthday"
+      {open && (
+        <div
             role="dialog"
             aria-modal="false"
             aria-labelledby="birthday-heading"
-            initial={{ y: "110%", opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: "110%", opacity: 0 }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.4 }}
-            className="fixed inset-x-0 bottom-0 z-[55] flex justify-center px-4 pb-4"
+            className="birthday-panel fixed inset-x-0 bottom-0 z-[55] flex justify-center px-4 pb-4"
           >
             <div className="relative max-h-[85dvh] w-full max-w-[38.2rem] overflow-y-auto rounded-[1.618rem] border-t-4 border-[#ffd700] bg-white p-[1.618rem] text-center shadow-2xl md:p-[2.618rem]">
               <button
@@ -102,12 +95,10 @@ export default function BirthdayCelebration() {
 
               <ul className="mt-[1.618rem] flex flex-wrap justify-center gap-[1.618rem]">
                 {celebrants.map((celebrant, index) => (
-                  <motion.li
+                  <li
                     key={celebrant.id}
-                    initial={{ y: 24, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.6, ease: "easeOut", delay: 0.8 + index * 0.15 }}
-                    className={`flex flex-col items-center gap-[0.618rem] ${single ? "w-full" : "w-[11.09rem]"}`}
+                    style={{ "--birthday-index": index }}
+                    className={`birthday-item flex flex-col items-center gap-[0.618rem] ${single ? "w-full" : "w-[11.09rem]"}`}
                   >
                     <SpeakerAvatar
                       name={celebrant.name}
@@ -123,13 +114,12 @@ export default function BirthdayCelebration() {
                     <p className="whitespace-pre-line font-nunito text-sm leading-[1.618] text-gray-600 md:text-base">
                       {celebrant.wishes}
                     </p>
-                  </motion.li>
+                  </li>
                 ))}
               </ul>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
     </>
   );
 }
