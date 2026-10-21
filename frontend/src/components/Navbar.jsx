@@ -26,7 +26,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="fixed top-0 z-40 flex h-[4.5rem] w-full items-center justify-between border-b border-white/10 bg-[#65007f]/95 px-4 shadow-[0_8px_30px_rgba(32,10,38,0.12)] backdrop-blur-xl sm:px-6 md:px-12 lg:px-20">
+      <nav aria-label="Main navigation" className="fixed top-0 z-40 flex h-[4.5rem] w-full items-center justify-between border-b border-white/10 bg-[#65007f]/95 px-4 shadow-[0_8px_30px_rgba(32,10,38,0.12)] backdrop-blur-xl sm:px-6 md:px-12 lg:px-20">
         <Link to="/" onClick={closeMenu} className="flex min-h-11 items-center">
           <img
             src="/logo.png"

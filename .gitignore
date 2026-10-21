@@ -28,6 +28,9 @@ backend/public/uploads/
 frontend/public/uploads/
 backend/server/database.sqlite
 backend/server/database.sqlite-journal
+backend/backups/
+frontend/test-results/
+frontend/playwright-report/
 
 # Editor directories and files
 .vscode/*

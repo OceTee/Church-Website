@@ -144,7 +144,7 @@ export default function Gallery() {
         ) : (
           <div className="flex flex-col gap-[2.618rem]">
             {groupedPhotos.map((month) => (
-              <section key={month.key} aria-labelledby={`gallery-month-${month.key}`}>
+              <section key={month.key} className="gallery-month" aria-labelledby={`gallery-month-${month.key}`}>
                 <h2
                   id={`gallery-month-${month.key}`}
                   className="mb-5 border-b border-[#65007f]/20 pb-2 font-palatino text-gr-lg font-bold text-[#330040]"

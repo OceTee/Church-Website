@@ -34,6 +34,7 @@ import {
     handleUploadError,
 } from "./uploads.js";
 import { rateLimit } from "./rateLimit.js";
+import nodemailer from "nodemailer";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -271,6 +272,54 @@ app.get("/api/health/details", requireAuth, async (req, res) => {
         startupError: startupError ? startupError.message : null,
         passwordWarning: status.passwordWarning,
     });
+});
+
+// Daily Vercel Cron check. Requires CRON_SECRET and never exposes usage data
+// publicly. Capacity limits must match this project's actual plan allowances.
+app.get("/api/maintenance/monitor", async (req, res) => {
+    const secret = process.env.CRON_SECRET;
+    if (!secret || req.get("authorization") !== `Bearer ${secret}`) {
+        return res.sendStatus(401);
+    }
+
+    try {
+        const database = await databaseStatus();
+        const alerts = [];
+        if (!database.ok) alerts.push("Turso database is unreachable.");
+        if (!isRemoteDatabase) alerts.push("Production API is using local SQLite fallback.");
+        else {
+            const usage = await databaseStorageUsageBytes();
+            const limit = tursoStorageLimitBytes();
+            if (usage / limit >= 0.85) alerts.push(`Turso storage is at ${Math.round((usage / limit) * 100)}% (${usage} of ${limit} bytes).`);
+        }
+        if (!isBlobStorage) alerts.push("Vercel Blob is not configured.");
+        else {
+            const usage = await blobStorageUsageBytes();
+            const limit = blobStorageLimitBytes();
+            if (usage / limit >= 0.85) alerts.push(`Vercel Blob storage is at ${Math.round((usage / limit) * 100)}% (${usage} of ${limit} bytes).`);
+        }
+        const admin = getAdminSetupStatus();
+        if (!admin.ok && !isAuthDisabled()) alerts.push(`Admin setup needs attention: ${admin.problem || "account missing"}.`);
+        if (startupError) alerts.push("Database initialization previously failed on this instance.");
+
+        if (alerts.length && process.env.EMAIL_USER?.trim() && process.env.EMAIL_PASS?.trim()) {
+            const email = process.env.EMAIL_USER.trim();
+            const transporter = nodemailer.createTransport({
+                service: "gmail",
+                auth: { user: email, pass: process.env.EMAIL_PASS.replace(/\s+/g, "") },
+            });
+            await transporter.sendMail({
+                from: `"CAC Website Monitor" <${email}>`,
+                to: (process.env.EMAIL_RECEIVER || email).trim(),
+                subject: "CAC website maintenance alert",
+                text: alerts.join("\n"),
+            });
+        }
+        return res.json({ ok: alerts.length === 0, alerts });
+    } catch (error) {
+        console.error("[monitor] Daily check failed:", error);
+        return res.status(503).json({ ok: false, alerts: ["Maintenance check failed; inspect Vercel logs."] });
+    }
 });
 
 // Tells the admin dashboard which upload transport to use. Large files cannot

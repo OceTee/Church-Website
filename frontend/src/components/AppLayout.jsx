@@ -8,6 +8,7 @@ import RequireAuth from "./RequireAuth";
 import ErrorBoundary from "./ErrorBoundary";
 import { useGive } from "../context/giveContext";
 import Landing from "../pages/Landing";
+import RouteMetadata from "./RouteMetadata";
 
 // Keep the homepage on the critical path. Less frequently visited pages,
 // especially the admin tools, are fetched only when a visitor opens them.
@@ -29,8 +30,10 @@ export default function AppLayout() {
   return (
     <div className="flex min-h-dvh flex-col bg-[#fbfaf8]">
       <ScrollToTop />
+      <RouteMetadata />
       <Navbar />
-      <main className="flex-1">
+      <a className="skip-link" href="#main-content">Skip to content</a>
+      <main id="main-content" tabIndex={-1} className="flex-1">
         <ErrorBoundary key={pathname}>
           <Suspense
             fallback={

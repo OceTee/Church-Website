@@ -12,7 +12,9 @@
     "start": "node server/server.js",
     "build": "echo \"Backend needs no build step.\"",
     "db:migrate": "node scripts/migrate.js",
-    "db:set-password": "node scripts/set-admin-password.js"
+    "db:set-password": "node scripts/set-admin-password.js",
+    "db:backup": "node scripts/backup.js",
+    "db:restore": "node scripts/restore-backup.js"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",
