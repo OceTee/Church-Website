@@ -24,6 +24,16 @@ const UPLOAD_FIELDS = {
     sermons: { file: "speakerImage", url: "speakerImageUrl" },
 };
 
+let galleryCleanupQueue = Promise.resolve();
+
+function cleanupOldestGalleryPhoto() {
+    const request = galleryCleanupQueue.then(() =>
+        apiJson("/gallery/cleanup-oldest", { method: "POST" })
+    );
+    galleryCleanupQueue = request.catch(() => {});
+    return request;
+}
+
 async function uploadDirect(category, file) {
     const { grant } = await apiJson("/uploads/grant", {
         method: "POST",
@@ -45,6 +55,34 @@ async function uploadDirect(category, file) {
     return blob.url;
 }
 
+function isBlobCapacityError(error) {
+    const details = [error?.name, error?.code, error?.message, error?.cause?.message]
+        .filter(Boolean)
+        .join(" ");
+    return /BlobStoreSuspendedError|quota|no space left|storage.{0,30}(full|limit|exceed)|store.{0,30}(full|limit|exceed)|(?:full|limit|exceed).{0,30}(?:blob|storage|store)|usage limit/i.test(
+        details
+    );
+}
+
+async function uploadGalleryDirectWithRecovery(file) {
+    while (true) {
+        try {
+            return await uploadDirect("gallery", file);
+        } catch (error) {
+            if (!isBlobCapacityError(error)) throw error;
+
+            try {
+                await cleanupOldestGalleryPhoto();
+            } catch (cleanupError) {
+                throw new Error(
+                    `${error.message || "Gallery storage is full."} Automatic cleanup could not make room: ${cleanupError.message}`,
+                    { cause: cleanupError }
+                );
+            }
+        }
+    }
+}
+
 /**
  * Uploads a file (if any) and creates its database record, then returns the
  * record. `fields` holds the remaining form values (title, date, ...).
@@ -54,7 +92,10 @@ export async function createWithUpload({ category, file, fields = {} }) {
     const names = UPLOAD_FIELDS[category];
 
     if (file && uploadMode === "direct") {
-        const url = await uploadDirect(category, file);
+        const url =
+            category === "gallery"
+                ? await uploadGalleryDirectWithRecovery(file)
+                : await uploadDirect(category, file);
         return apiJson(`/${category}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },

@@ -23,6 +23,7 @@ import {
     isBlobStorage,
     isValidCategory,
     isSafeMediaUrl,
+    isManagedMediaUrl,
     uploadLimits,
     storeUpload,
     discardUpload,
@@ -399,6 +400,63 @@ app.post("/api/blob-upload", async (req, res) => {
 });
 
 // --- GALLERY ENDPOINTS ---
+function isDatabaseFullError(error) {
+    const details = `${error?.code || ""} ${error?.message || ""} ${error?.cause?.message || ""}`;
+    return /SQLITE_FULL|database or disk is full|database.{0,20}full|storage.{0,20}(limit|full|exceed)/i.test(
+        details
+    );
+}
+
+/**
+ * Removes one oldest gallery photo owned by this app. A database-first delete
+ * is used when an insert fails from SQLITE_FULL so its freed pages can be
+ * reused before we retry the insert.
+ */
+async function deleteOldestGalleryPhoto({ databaseFirst = false } = {}) {
+    const photos = await query(
+        "SELECT id, imageUrl FROM gallery ORDER BY createdAt ASC, id ASC"
+    );
+
+    for (const photo of photos) {
+        if (!isManagedMediaUrl(photo.imageUrl)) continue;
+
+        if (databaseFirst) {
+            const result = await run("DELETE FROM gallery WHERE id = ?", [photo.id]);
+            if (result.changes === 0) continue;
+            await removeStoredFile(photo.imageUrl);
+            return photo;
+        }
+
+        // For a Blob quota error, delete the object first so the next upload
+        // retry has a chance to reclaim storage. Keep the database row if the
+        // object could not be removed.
+        if (!(await removeStoredFile(photo.imageUrl))) continue;
+        await run("DELETE FROM gallery WHERE id = ?", [photo.id]);
+        return photo;
+    }
+
+    return null;
+}
+
+async function insertGalleryWithRecovery(imageUrl, date) {
+    while (true) {
+        try {
+            return await run("INSERT INTO gallery (imageUrl, date) VALUES (?, ?)", [imageUrl, date]);
+        } catch (error) {
+            if (!isDatabaseFullError(error)) throw error;
+
+            const removed = await deleteOldestGalleryPhoto({ databaseFirst: true });
+            if (!removed) {
+                // Avoid leaving the just-uploaded object orphaned when there
+                // are no older managed gallery photos left to clean up.
+                await removeStoredFile(imageUrl);
+                throw error;
+            }
+            console.warn(`[gallery] Database full; removed oldest photo ${removed.id} and retrying.`);
+        }
+    }
+}
+
 app.get("/api/gallery", async (req, res) => {
     try {
         // Newest photo first, by the date it was taken. Older photos carry a
@@ -444,10 +502,7 @@ app.post(
             const imageUrl = existingUrl || (await storeUpload("gallery", req.file));
             const photoDate = date || today();
 
-            const result = await run(
-                "INSERT INTO gallery (imageUrl, date) VALUES (?, ?)",
-                [imageUrl, photoDate]
-            );
+            const result = await insertGalleryWithRecovery(imageUrl, photoDate);
 
             res.status(201).json({ id: result.lastID, imageUrl, date: photoDate });
         } catch (err) {
@@ -455,6 +510,23 @@ app.post(
         }
     }
 );
+
+// Called only after an authenticated admin's direct Blob upload fails with a
+// quota/capacity error. Each call removes one oldest managed photo; the client
+// retries and asks again only if the Blob store still rejects the upload.
+app.post("/api/gallery/cleanup-oldest", requireAuth, async (req, res) => {
+    try {
+        const removed = await deleteOldestGalleryPhoto();
+        if (!removed) {
+            return res.status(409).json({
+                error: "No older gallery photos are available to clear storage.",
+            });
+        }
+        res.json({ deleted: true, id: removed.id });
+    } catch (err) {
+        serverError(res, err);
+    }
+});
 
 app.delete("/api/gallery/:id", requireAuth, async (req, res) => {
     try {

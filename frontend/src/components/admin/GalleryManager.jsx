@@ -14,33 +14,77 @@ import {
 
 // The date the photo was taken. It defaults to today, the usual case when
 // uploading straight after a service.
-const emptyForm = () => ({ date: todayIso(), file: null });
-
 const photoDate = (photo) => formatDate(photo.date, { weekday: false });
 
 export default function GalleryManager({ photos, onChanged, onError }) {
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(() => ({ date: todayIso() }));
+  const [files, setFiles] = useState([]);
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState(null);
+  const [notice, setNotice] = useState("");
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!form.file) return;
+    if (files.length === 0) return;
 
+    const selectedFiles = files;
     setBusy(true);
+    setNotice("");
+    setProgress({ complete: 0, total: selectedFiles.length });
     try {
-      await createWithUpload({
-        category: "gallery",
-        file: form.file,
-        fields: { date: form.date },
-      });
+      const results = new Array(selectedFiles.length);
+      let nextIndex = 0;
+      let complete = 0;
+
+      const uploadWorker = async () => {
+        while (nextIndex < selectedFiles.length) {
+          const index = nextIndex++;
+          try {
+            await createWithUpload({
+              category: "gallery",
+              file: selectedFiles[index],
+              fields: { date: form.date },
+            });
+            results[index] = { ok: true };
+          } catch (error) {
+            results[index] = { ok: false, error };
+          } finally {
+            complete += 1;
+            setProgress({ complete, total: selectedFiles.length });
+          }
+        }
+      };
+
+      // Keep several uploads moving at once without opening an unbounded
+      // number of requests when a large selection is made.
+      await Promise.all(
+        Array.from({ length: Math.min(3, selectedFiles.length) }, uploadWorker)
+      );
+
+      const uploaded = results.filter((result) => result.ok).length;
+      const failed = results.filter((result) => !result.ok);
 
       event.target.reset();
-      setForm(emptyForm());
-      await onChanged();
+      setFiles([]);
+      setForm({ date: todayIso() });
+      setProgress(null);
+
+      if (uploaded > 0) await onChanged();
+      if (failed.length > 0) {
+        const firstFailure = failed[0].error?.message || "Unknown upload error";
+        onError(
+          new Error(
+            `Uploaded ${uploaded} of ${selectedFiles.length} photos. ${failed.length} failed. ${firstFailure}`
+          )
+        );
+      } else {
+        setNotice(`Uploaded ${uploaded} photo${uploaded === 1 ? "" : "s"} successfully.`);
+      }
     } catch (error) {
       onError(error);
     } finally {
       setBusy(false);
+      setProgress(null);
     }
   };
 
@@ -65,22 +109,28 @@ export default function GalleryManager({ photos, onChanged, onError }) {
       <form onSubmit={handleSubmit} className="mb-8 flex flex-col gap-4">
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <label className={labelClass} htmlFor="photo-file">
-              Photo (image)
+            <label className={labelClass} htmlFor="photo-files">
+              Photos (select as many as you need)
             </label>
             <input
-              id="photo-file"
+              id="photo-files"
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+              multiple
               required
               onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  file: event.target.files[0] || null,
-                }))
+                setFiles(Array.from(event.target.files || []))
               }
               className="font-nunito text-sm"
             />
+            {files.length > 0 && (
+              <p className="mt-1 font-nunito text-xs text-gray-500">
+                {files.length} photo{files.length === 1 ? "" : "s"} selected
+              </p>
+            )}
+            <p className="mt-1 max-w-lg font-nunito text-xs text-gray-500">
+              If the gallery storage or database is full, older gallery photos may be removed automatically to make room.
+            </p>
           </div>
           <div>
             <label className={labelClass} htmlFor="photo-date">
@@ -106,8 +156,15 @@ export default function GalleryManager({ photos, onChanged, onError }) {
           disabled={busy}
           className={`${primaryButtonClass} self-start`}
         >
-          {busy ? "Uploading..." : "Upload Photo"}
+          {busy
+            ? `Uploading ${progress?.complete || 0} of ${progress?.total || files.length}…`
+            : `Upload ${files.length || "Photos"}`}
         </button>
+        {notice && (
+          <p role="status" className="font-nunito text-sm text-green-700">
+            {notice}
+          </p>
+        )}
       </form>
 
       <h3 className="mb-4 border-b pb-2 font-nunito font-semibold text-gray-700">

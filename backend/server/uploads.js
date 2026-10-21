@@ -180,6 +180,18 @@ function resolvePublicFilePath(publicUrl) {
     return filePath.startsWith(uploadsRoot + path.sep) ? filePath : null;
 }
 
+/** True only for media owned by this app's active storage driver. */
+export function isManagedMediaUrl(publicUrl) {
+    if (isBlobStorage) {
+        try {
+            return BLOB_HOST.test(new URL(publicUrl).hostname);
+        } catch {
+            return false;
+        }
+    }
+    return Boolean(resolvePublicFilePath(publicUrl));
+}
+
 /**
  * Drops a freshly received file without storing it. Used when validation
  * fails after multer has already written the file to disk.
