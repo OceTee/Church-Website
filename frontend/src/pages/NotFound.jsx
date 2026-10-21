@@ -4,7 +4,7 @@ import Header from "../components/Header";
 
 export default function NotFound() {
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center px-6 pt-32 pb-20 text-center">
+    <div className="flex min-h-dvh flex-col items-center justify-center px-4 pt-28 pb-16 sm:px-6 sm:pt-32 sm:pb-20 text-center">
       <Header
         main="Page Not Found"
         sub="The page you are looking for may have been moved or no longer exists."

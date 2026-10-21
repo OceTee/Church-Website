@@ -54,8 +54,8 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-dvh items-center justify-center px-6 pt-32 pb-20">
-      <div className="w-full max-w-md rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
+    <div className="flex min-h-dvh items-center justify-center px-4 pt-28 pb-16 sm:px-6 sm:pt-32 sm:pb-20">
+      <div className="surface-card w-full max-w-md rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-8">
         <Header
           main="Admin Sign In"
           sub="Enter the admin password to manage sermons, events and gallery content."
@@ -71,7 +71,7 @@ export default function Login() {
               required
               autoFocus
               autoComplete="current-password"
-              className="rounded-lg border border-gray-200 p-3 font-normal focus:border-[#9550a7] focus:outline-none"
+              className="rounded-xl border border-gray-200 bg-white p-3 font-normal transition focus:border-[#9550a7] focus:outline-none focus:ring-4 focus:ring-[#65007f]/10"
             />
           </label>
 

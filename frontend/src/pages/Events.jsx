@@ -31,7 +31,7 @@ export default function Events() {
   }, []);
 
   return (
-    <div className="flex min-h-dvh flex-col items-center px-6 pt-32 pb-20">
+    <div className="flex min-h-dvh flex-col items-center px-4 pt-28 pb-16 sm:px-6 sm:pt-32 sm:pb-20">
       <div className="flex w-full max-w-3xl flex-col gap-8">
         <Header
           main="Events Calendar"

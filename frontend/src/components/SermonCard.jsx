@@ -11,7 +11,7 @@ export default function SermonCard({ sermon }) {
   return (
     <Link
       to={`/sermons/${sermon.id}`}
-      className="group flex h-full flex-col items-center gap-[1.618rem] rounded-[1.618rem] border border-[#65007f]/15 bg-white p-[1.618rem] text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#65007f] focus-visible:ring-offset-2"
+      className="surface-card group flex h-full flex-col items-center gap-[1.618rem] rounded-[1.618rem] border border-[#65007f]/10 bg-white p-5 text-center shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#65007f] focus-visible:ring-offset-2 sm:p-[1.618rem]"
     >
       <div className="flex flex-1 flex-col gap-[0.618rem]">
         {sermon.date && (

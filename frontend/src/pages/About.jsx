@@ -2,14 +2,14 @@ import Header from "../components/Header";
 
 export default function About() {
   return (
-    <div className="flex min-h-dvh flex-col items-center px-6 pt-32 pb-20">
+    <div className="flex min-h-dvh flex-col items-center px-4 pt-28 pb-16 sm:px-6 sm:pt-32 sm:pb-20">
       <div className="flex w-full max-w-4xl flex-col gap-10">
         <Header
           main="About Us"
           sub="Discover who we are, what we believe, and where we're going together as a church family."
         />
 
-        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm sm:p-10">
+        <section className="surface-card rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-10">
           <h2 className="mb-6 font-palatino text-2xl font-bold text-[#330040] md:text-3xl">
             Community support
           </h2>
@@ -18,7 +18,7 @@ export default function About() {
           </p>
         </section>
 
-        <section className="rounded-2xl bg-[#65007f] p-6 text-white shadow-md sm:p-10">
+        <section className="rounded-2xl bg-[#65007f] p-5 text-white shadow-[0_18px_50px_rgba(54,8,67,0.14)] sm:p-10">
           <h2 className="mb-6 font-palatino text-2xl font-bold text-[#ffd700] md:text-3xl">
             Main Purpose
           </h2>

@@ -105,7 +105,7 @@ export default function Gallery() {
   );
 
   return (
-    <div className="flex min-h-dvh flex-col items-center px-6 pt-32 pb-20">
+    <div className="flex min-h-dvh flex-col items-center px-4 pt-28 pb-16 sm:px-6 sm:pt-32 sm:pb-20">
       <div className="flex w-full max-w-5xl flex-col gap-8">
         <Header
           main="Gallery"
@@ -157,7 +157,7 @@ export default function Gallery() {
                       <h3 className="mb-3 font-palatino text-gr-md font-semibold text-[#65007f]">
                         {dateGroup.label}
                       </h3>
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+                      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
                         {dateGroup.photos.map(({ photo, photoIndex }) => (
                           <figure
                             key={photo.id}

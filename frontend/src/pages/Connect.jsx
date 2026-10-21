@@ -41,7 +41,7 @@ export default function Connect() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col items-center px-6 pt-32 pb-20">
+    <div className="flex min-h-dvh flex-col items-center px-4 pt-28 pb-16 sm:px-6 sm:pt-32 sm:pb-20">
       <div className="flex w-full max-w-4xl flex-col gap-10">
         <Header
           main="Get Connected"
@@ -49,7 +49,7 @@ export default function Connect() {
         />
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="surface-card flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
             <MapPin className="text-[#65007f]" size={24} />
             <h3 className="font-palatino text-xl font-semibold text-[#330040]">
               Visit Us
@@ -68,7 +68,7 @@ export default function Connect() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="surface-card flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
             <Mail className="text-[#65007f]" size={24} />
             <h3 className="font-palatino text-xl font-semibold text-[#330040]">
               Email
@@ -81,7 +81,7 @@ export default function Connect() {
             </a>
           </div>
 
-          <div className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="surface-card flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
             <Phone className="text-[#65007f]" size={24} />
             <h3 className="font-palatino text-xl font-semibold text-[#330040]">
               Call Us
@@ -101,7 +101,7 @@ export default function Connect() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
+        <div className="surface-card rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-8">
           <h3 className="mb-4 font-palatino text-2xl font-semibold text-[#330040]">
             Send us a message
           </h3>
@@ -132,7 +132,7 @@ export default function Connect() {
                   onChange={handleChange}
                   required
                   placeholder="Your name"
-                  className="rounded-lg border border-gray-200 p-3 font-nunito focus:border-[#9550a7] focus:outline-none"
+                  className="w-full rounded-xl border border-gray-200 bg-white p-3 font-nunito transition focus:border-[#9550a7] focus:outline-none focus:ring-4 focus:ring-[#65007f]/10"
                 />
                 <input
                   name="email"
@@ -141,7 +141,7 @@ export default function Connect() {
                   onChange={handleChange}
                   required
                   placeholder="Your email"
-                  className="rounded-lg border border-gray-200 p-3 font-nunito focus:border-[#9550a7] focus:outline-none"
+                  className="w-full rounded-xl border border-gray-200 bg-white p-3 font-nunito transition focus:border-[#9550a7] focus:outline-none focus:ring-4 focus:ring-[#65007f]/10"
                 />
               </div>
               <textarea
@@ -151,13 +151,13 @@ export default function Connect() {
                 required
                 rows={5}
                 placeholder="How can we help?"
-                className="rounded-lg border border-gray-200 p-3 font-nunito focus:border-[#9550a7] focus:outline-none"
+                className="w-full rounded-xl border border-gray-200 bg-white p-3 font-nunito transition focus:border-[#9550a7] focus:outline-none focus:ring-4 focus:ring-[#65007f]/10"
               />
               <div className="flex flex-col gap-2">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="self-start rounded-full bg-[#65007f] px-6 py-3 font-nunito text-white transition hover:bg-[#500066] disabled:opacity-70"
+                  className="min-h-11 self-start rounded-full bg-[#65007f] px-6 py-3 font-nunito font-semibold text-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-[#500066] hover:shadow-md disabled:opacity-70"
                 >
                   {isSubmitting ? "Sending..." : "Send Message"}
                 </button>

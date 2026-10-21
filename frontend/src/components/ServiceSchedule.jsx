@@ -3,10 +3,10 @@ import { site } from "../config/site";
 export default function ServiceSchedule() {
   return (
     <div className="w-full pt-6">
-      <h2 className="relative z-10 -mb-4 ml-4 w-fit -rotate-3 rounded-full bg-[#ffd700] px-4 py-2 font-nunito text-sm text-black shadow-md">
+      <h2 className="relative z-10 -mb-3 ml-4 w-fit rounded-full bg-[#ffd700] px-4 py-2 font-nunito text-sm font-bold tracking-wide text-[#28172e] shadow-sm">
         Join us every
       </h2>
-      <div className="flex flex-col gap-6 rounded-2xl bg-[#65007f] p-7 pt-10 text-white shadow-lg md:flex-row md:gap-12 md:p-10 md:pt-10">
+      <div className="flex flex-col gap-6 rounded-[1.5rem] bg-[#65007f] p-6 pt-8 text-white shadow-[0_18px_50px_rgba(54,8,67,0.16)] sm:p-8 sm:pt-9 md:flex-row md:gap-12 md:p-10">
         {site.serviceTimes.map((service) => (
           <div key={service.day} className="flex flex-col gap-2">
             <h3 className="font-palatino text-2xl font-semibold md:text-3xl">

@@ -49,7 +49,7 @@ export default function SermonDetail() {
   }, [sermon]);
 
   return (
-    <div className="flex min-h-dvh flex-col items-center px-6 pt-32 pb-20">
+    <div className="flex min-h-dvh flex-col items-center px-4 pt-28 pb-16 sm:px-6 sm:pt-32 sm:pb-20">
       <div className="w-full max-w-[61.8rem]">
         <Link
           to="/sermons"
@@ -74,7 +74,7 @@ export default function SermonDetail() {
         )}
 
         {status === "ready" && sermon && (
-          <article className="grid grid-cols-[1fr_auto] gap-x-[1.618rem] md:grid-cols-[1.618fr_1fr] gap-y-[2.618rem] rounded-[1.618rem] bg-white p-[1.618rem] shadow-sm md:gap-x-[2.618rem] md:p-[2.618rem]">
+          <article className="surface-card grid grid-cols-[1fr_auto] gap-x-3 gap-y-8 rounded-[1.618rem] bg-white p-4 shadow-sm sm:gap-x-[1.618rem] sm:p-[1.618rem] md:grid-cols-[1.618fr_1fr] md:gap-x-[2.618rem] md:gap-y-[2.618rem] md:p-[2.618rem]">
             <header className="col-start-1 row-start-1 flex flex-col gap-[0.618rem] self-center">
               {sermon.date && (
                 <p className="font-nunito text-xs font-semibold uppercase tracking-[0.162em] text-[#9550a7]">

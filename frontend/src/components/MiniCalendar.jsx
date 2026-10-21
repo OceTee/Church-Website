@@ -27,10 +27,10 @@ export default function MiniCalendar({ title, sub, date: rawDate, time: rawTime,
   const aspectStyle = aspectRatio ? { aspectRatio: aspectRatio } : {};
 
   return (
-    <article className="relative w-full overflow-hidden rounded-xl shadow-md bg-black" style={aspectStyle}>
+    <article className="group relative w-full overflow-hidden rounded-2xl bg-black shadow-[0_14px_40px_rgba(24,10,30,0.14)]" style={aspectStyle}>
       {/* Background image layer - at the very back */}
       <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-700 group-hover:scale-[1.025]"
         style={{
           zIndex: 0,
           backgroundImage: `linear-gradient(to top, rgba(10, 4, 20, 0.65), transparent 60%), ${cssUrl(flyerUrl ? assetUrl(flyerUrl) : "/BG.svg")}`,
@@ -41,7 +41,7 @@ export default function MiniCalendar({ title, sub, date: rawDate, time: rawTime,
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/10" style={{ zIndex: 10 }} />
 
       {/* Content layer - all text at the bottom, yellow badge top-right */}
-      <div className="relative flex h-full flex-col justify-end p-5" style={{ zIndex: 20 }}>
+      <div className="relative flex h-full flex-col justify-end p-4 sm:p-5" style={{ zIndex: 20 }}>
         {/* Top right - yellow date badge only */}
         <div className="flex justify-end mb-auto">
           <div className="shrink-0 rounded-lg bg-[#ffd700] px-3 py-1.5 text-center">
@@ -51,7 +51,7 @@ export default function MiniCalendar({ title, sub, date: rawDate, time: rawTime,
         </div>
 
         {/* Bottom - all text content stacked */}
-        <div className="flex flex-col items-center gap-3 text-center px-4 pb-2">
+        <div className="flex flex-col items-center gap-2.5 px-2 pb-1 text-center sm:gap-3 sm:px-4 sm:pb-2">
           {/* Title */}
           <h2 className="font-palatino text-xl font-bold leading-tight text-white md:text-2xl lg:text-3xl">
             {title}

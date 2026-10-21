@@ -81,7 +81,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col items-center px-6 pb-20 pt-32">
+    <div className="flex min-h-dvh flex-col items-center px-4 pb-16 pt-28 sm:px-6 sm:pb-20 sm:pt-32">
       <div className="flex w-full max-w-4xl flex-col gap-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <Header

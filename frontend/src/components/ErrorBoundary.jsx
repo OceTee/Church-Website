@@ -21,7 +21,7 @@ export default class ErrorBoundary extends Component {
     if (!this.state.failed) return this.props.children;
 
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-6 px-6 pt-32 pb-20 text-center">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-6 px-4 pt-28 pb-16 sm:px-6 sm:pt-32 sm:pb-20 text-center">
         <h1 className="font-palatino text-3xl font-bold text-[#330040] md:text-4xl">
           Something went wrong
         </h1>

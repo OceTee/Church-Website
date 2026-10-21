@@ -23,7 +23,7 @@ export default function AppLayout() {
   const { pathname } = useLocation();
 
   return (
-    <div className="flex min-h-dvh flex-col bg-gray-100">
+    <div className="flex min-h-dvh flex-col bg-[#fbfaf8]">
       <ScrollToTop />
       <Navbar />
       <main className="flex-1">
