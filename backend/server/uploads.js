@@ -66,6 +66,39 @@ export function uploadLimits(category) {
  */
 export const isBlobStorage = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
 
+// Vercel's Hobby allowance includes 1 GB of Blob storage. Set
+// BLOB_STORAGE_LIMIT_BYTES to the storage allowance the project should keep
+// below when using a different plan or a custom safety ceiling.
+const DEFAULT_BLOB_STORAGE_LIMIT_BYTES = 1_000_000_000;
+
+export function blobStorageLimitBytes() {
+    const configured = Number(process.env.BLOB_STORAGE_LIMIT_BYTES);
+    return Number.isSafeInteger(configured) && configured > 0
+        ? configured
+        : DEFAULT_BLOB_STORAGE_LIMIT_BYTES;
+}
+
+/** Current stored bytes across the whole Vercel Blob store, including pages. */
+export async function blobStorageUsageBytes() {
+    if (!isBlobStorage) return 0;
+
+    const { list } = await import("@vercel/blob");
+    let total = 0;
+    let cursor;
+
+    do {
+        const page = await list({
+            limit: 1000,
+            ...(cursor ? { cursor } : {}),
+            token: process.env.BLOB_READ_WRITE_TOKEN,
+        });
+        total += page.blobs.reduce((sum, blob) => sum + Number(blob.size || 0), 0);
+        cursor = page.hasMore ? page.cursor : undefined;
+    } while (cursor);
+
+    return total;
+}
+
 function getCategory(category) {
     const config = CATEGORIES[category];
     if (!config) {

@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
-import { query, run, ensureSchema } from "./db.js";
+import { query, run, ensureSchema, isRemoteDatabase } from "./db.js";
 import {
     issueToken,
     authenticate,
@@ -25,6 +25,8 @@ import {
     isSafeMediaUrl,
     isManagedMediaUrl,
     uploadLimits,
+    blobStorageLimitBytes,
+    blobStorageUsageBytes,
     storeUpload,
     discardUpload,
     removeStoredFile,
@@ -407,6 +409,63 @@ function isDatabaseFullError(error) {
     );
 }
 
+// Turso's storage allowance is plan-level and can differ by account. Set
+// TURSO_STORAGE_LIMIT_BYTES to this database's practical share of that limit.
+const DEFAULT_TURSO_STORAGE_LIMIT_BYTES = 5 * 1024 * 1024 * 1024;
+
+function tursoStorageLimitBytes() {
+    const configured = Number(process.env.TURSO_STORAGE_LIMIT_BYTES);
+    return Number.isSafeInteger(configured) && configured > 0
+        ? configured
+        : DEFAULT_TURSO_STORAGE_LIMIT_BYTES;
+}
+
+async function databaseStorageUsageBytes() {
+    const [pageCount, freePages, pageSize] = await Promise.all([
+        query("PRAGMA page_count"),
+        query("PRAGMA freelist_count"),
+        query("PRAGMA page_size"),
+    ]);
+    const allocatedPages = Number(pageCount[0]?.page_count);
+    const reusablePages = Number(freePages[0]?.freelist_count ?? 0);
+    const bytesPerPage = Number(pageSize[0]?.page_size);
+    if (![allocatedPages, reusablePages, bytesPerPage].every(Number.isFinite)) {
+        throw new Error("Could not read database storage usage.");
+    }
+    // Deleted rows can leave reusable SQLite pages even when the file itself
+    // does not shrink. Count only pages still holding live data.
+    return Math.max(0, allocatedPages - reusablePages) * bytesPerPage;
+}
+
+async function prepareDatabaseCapacity() {
+    if (!isRemoteDatabase) return 0;
+
+    const threshold = Math.floor(tursoStorageLimitBytes() * 0.85);
+    let usage = await databaseStorageUsageBytes();
+    let removedPhotos = 0;
+    // Reserve one page for the new photo record. Its metadata is small, but
+    // this also covers an insert that crosses a page boundary.
+    while (usage + 4096 > threshold) {
+        const removed = await deleteOldestGalleryPhoto({ databaseFirst: true });
+        if (!removed) {
+            throw Object.assign(
+                new Error("Turso storage is at its 85% safety threshold, and no older gallery photos remain to remove."),
+                { status: 409 }
+            );
+        }
+        removedPhotos += 1;
+        const updatedUsage = await databaseStorageUsageBytes();
+        if (updatedUsage >= usage) {
+            throw Object.assign(
+                new Error("An older photo was removed, but database storage usage did not decrease yet. Please retry shortly."),
+                { status: 503 }
+            );
+        }
+        usage = updatedUsage;
+    }
+    return removedPhotos;
+}
+
 /**
  * Removes one oldest gallery photo owned by this app. A database-first delete
  * is used when an insert fails from SQLITE_FULL so its freed pages can be
@@ -524,6 +583,59 @@ app.post("/api/gallery/cleanup-oldest", requireAuth, async (req, res) => {
         }
         res.json({ deleted: true, id: removed.id });
     } catch (err) {
+        serverError(res, err);
+    }
+});
+
+// Proactive guard for direct uploads. Vercel Blob usage is discovered by
+// listing the store, then oldest gallery objects are removed until the next
+// upload keeps total storage at or below 85% of the configured ceiling.
+app.post("/api/gallery/prepare-upload", requireAuth, async (req, res) => {
+    const incomingBytes = Number(req.body?.sizeBytes);
+    if (
+        !Number.isSafeInteger(incomingBytes) ||
+        incomingBytes < 1 ||
+        incomingBytes > uploadLimits("gallery").maximumSizeInBytes
+    ) {
+        return badRequest(res, "Invalid gallery photo size.");
+    }
+
+    try {
+        const removedDatabasePhotos = await prepareDatabaseCapacity();
+        if (!isBlobStorage) {
+            return res.json({ thresholdPercent: 85, removedPhotos: 0, removedDatabasePhotos });
+        }
+
+        const limit = blobStorageLimitBytes();
+        const threshold = Math.floor(limit * 0.85);
+        let usage = await blobStorageUsageBytes();
+        let removedPhotos = 0;
+
+        while (usage + incomingBytes > threshold) {
+            const removed = await deleteOldestGalleryPhoto();
+            if (!removed) {
+                return res.status(409).json({
+                    error:
+                        "Blob storage is at its 85% safety threshold, and no more app-managed gallery photos are available to remove.",
+                });
+            }
+
+            removedPhotos += 1;
+            const updatedUsage = await blobStorageUsageBytes();
+            if (updatedUsage >= usage) {
+                return res.status(503).json({
+                    error:
+                        "An older gallery photo was removed, but Vercel has not reported lower Blob usage yet. Please retry shortly.",
+                });
+            }
+            usage = updatedUsage;
+        }
+
+        res.json({ thresholdPercent: 85, removedPhotos, removedDatabasePhotos });
+    } catch (err) {
+        if (err.status === 409 || err.status === 503) {
+            return res.status(err.status).json({ error: err.message });
+        }
         serverError(res, err);
     }
 });
