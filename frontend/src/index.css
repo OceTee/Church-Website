@@ -1,19 +1,14 @@
 @import "tailwindcss";
 
-@font-face {
-  font-family: "Inter";
-  src: url("/fonts/Inter_18pt-Regular.ttf");
-}
-
-@font-face {
-    font-family: "PlayfairDisplay";
-    src: url(/fonts/PlayfairDisplay-Regular.ttf);
-}
+/* Self-hosted variable WOFF2 fonts. Every weight is a real cut, so the bold
+   and semibold headings are not synthesized from the regular face. */
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/playfair-display";
 
 @theme {
-    --font-inter: "Inter", sans-serif;
-    --font-playfair: "PlayfairDisplay", sans-serif;
-    
+    --font-inter: "Inter Variable", "Inter", system-ui, sans-serif;
+    --font-playfair: "Playfair Display Variable", "Playfair Display", Georgia, serif;
+
     /* Golden Ratio Typography Base 16px (1rem) */
     --text-gr-base: 1rem;       /* 16px */
     --text-gr-md: 1.25rem;      /* 20px */

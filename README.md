@@ -9,8 +9,8 @@ This project is a modern, fully responsive church website paired with a custom-b
 Instead of using a generic website builder, I developed a bespoke full-stack solution tailored specifically to the church's needs:
 
 *   **Dynamic Admin Dashboard:** A secure, hidden portal where administrators can effortlessly update the website's content in real-time.
-*   **Sermons Manager:** A dedicated audio library. Staff can upload `.mp3` files, and the website automatically generates sleek HTML5 audio players so the congregation can catch up on past messages directly from their browsers.
-*   **Events Calendar:** A streamlined scheduling system. New events automatically appear on the landing page complete with dates, times, and optional flyer images.
+*   **Sermons Manager:** Staff paste a link to each recording. YouTube and Vimeo links become embedded players, direct audio links become HTML5 audio players, and anything else becomes a plain link, so the congregation can catch up on past messages directly from their browsers.
+*   **Events Calendar:** A streamlined scheduling system. New events automatically appear on the landing page complete with dates, times, and optional flyer images, and drop off the public pages once their date has passed.
 *   **Live Gallery:** A cloud-synced photo gallery that updates instantly when new pictures are uploaded via the admin portal.
 *   **Direct-to-Inbox Contact Form:** A reliable messaging system that bypasses third-party email services, routing visitor inquiries securely and directly to the church's inbox.
 
@@ -32,9 +32,9 @@ I structured this as a **Monorepo** consisting of two independently deployable a
 ### The Backend
 *   **Express 5 (Node.js):** A lightweight, robust API to handle all data and media processing.
 *   **Turso (libSQL):** An edge-ready SQLite database for lightning-fast queries anywhere in the world.
-*   **Vercel Blob:** For secure, scalable media storage (images and audio).
-*   **Nodemailer:** Custom SMTP integration for the contact form.
-*   **Custom Authentication:** A bespoke JWT-like HMAC signing system to keep the admin dashboard secure.
+*   **Vercel Blob:** For secure, scalable media storage (gallery photos and event flyers).
+*   **Nodemailer:** Custom SMTP integration for the contact form, protected by per-IP rate limiting and a spam honeypot.
+*   **Custom Authentication:** A bespoke JWT-like HMAC signing system to keep the admin dashboard secure, with database-backed rate limiting on sign-in.
 
 ---
 *Built with passion and purpose.*

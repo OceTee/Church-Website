@@ -14,6 +14,19 @@ export function apiUrl(path) {
     return `${API_BASE}${normalized}`;
 }
 
+/**
+ * A `url()` value for inline CSS. Quotes, backslashes and newlines are
+ * percent-encoded, so a stored URL can never close the string and inject
+ * further CSS.
+ */
+export function cssUrl(path) {
+    const escaped = String(path).replace(
+        /["\\\n\r]/g,
+        (character) => `%${character.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")}`
+    );
+    return `url("${escaped}")`;
+}
+
 export function assetUrl(path) {
     if (!path) return "";
     if (/^https?:\/\//i.test(path)) return path;

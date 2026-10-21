@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Radio, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { assetUrl } from "../lib/api";
+import { assetUrl, cssUrl } from "../lib/api";
+import { formatEventDate, formatEventTime, upcomingEvents } from "../lib/events";
 import { site } from "../config/site";
 
 const FALLBACK_BG = "/BG.svg";
@@ -14,14 +15,20 @@ function safeBackground(url) {
   return /^https?:\/\//i.test(url) || url.startsWith("/") ? url : null;
 }
 
+function prefersReducedMotion() {
+  return typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+}
+
 export default function Hero({ events = [] }) {
-  const slides = events.slice(0, 5);
+  const slides = upcomingEvents(events).slice(0, 5);
   const hasSlides = slides.length > 0;
   const [index, setIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
+  const [paused, setPaused] = useState(prefersReducedMotion);
   const drag = useRef({ startX: 0, moved: false });
+  const resumeTimer = useRef(null);
 
-  const current = hasSlides ? slides[index] : null;
+  // `index` can point past the end if the list shrinks.
+  const current = hasSlides ? slides[index % slides.length] : null;
   const bgUrl = safeBackground(current ? assetUrl(current.flyerUrl) : null) || FALLBACK_BG;
 
   useEffect(() => {
@@ -30,44 +37,53 @@ export default function Hero({ events = [] }) {
     return () => clearInterval(id);
   }, [hasSlides, paused, slides.length]);
 
-  useEffect(() => {
-    if (!hasSlides) return undefined;
-    const onKey = (e) => {
-      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
-        setPaused(true);
-        setIndex((i) => (i + (e.key === "ArrowRight" ? 1 : -1) + slides.length) % slides.length);
-        setTimeout(() => setPaused(false), AUTO_MS);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [hasSlides, slides.length]);
+  useEffect(() => () => clearTimeout(resumeTimer.current), []);
+
+  // Pauses after manual navigation, then resumes once. A new navigation
+  // restarts the countdown rather than stacking timers.
+  const pauseThenResume = () => {
+    setPaused(true);
+    clearTimeout(resumeTimer.current);
+    if (prefersReducedMotion()) return;
+    resumeTimer.current = setTimeout(() => setPaused(false), AUTO_MS);
+  };
 
   const go = (dir) => {
-    setPaused(true);
+    pauseThenResume();
     setIndex((i) => (i + dir + slides.length) % slides.length);
-    setTimeout(() => setPaused(false), AUTO_MS);
+  };
+
+  // Arrow keys only act while focus is inside the carousel, so they never
+  // hijack scrolling or other controls elsewhere on the page.
+  const onKeyDown = (event) => {
+    if (!hasSlides) return;
+    if (event.key === "ArrowRight") go(1);
+    if (event.key === "ArrowLeft") go(-1);
   };
 
   const startDrag = (x) => { drag.current = { startX: x, moved: false }; };
   const moveDrag = (x) => { if (Math.abs(x - drag.current.startX) > 40) drag.current.moved = true; };
   const endDrag = (x) => {
     const dx = x - drag.current.startX;
-    if (drag.current.moved && Math.abs(dx) > 60) go(dx < 0 ? 1 : -1);
+    if (hasSlides && drag.current.moved && Math.abs(dx) > 60) go(dx < 0 ? 1 : -1);
   };
 
   return (
     <section
-      className="relative flex w-full justify-center overflow-hidden bg-cover bg-center bg-no-repeat"
+      className="relative flex w-full justify-center overflow-hidden bg-cover bg-center bg-no-repeat focus:outline-none"
+      aria-roledescription={hasSlides ? "carousel" : undefined}
+      aria-label={hasSlides ? "Upcoming events" : undefined}
+      tabIndex={hasSlides ? 0 : undefined}
+      onKeyDown={onKeyDown}
       style={{
         minHeight: "92vh",
         // Dark at both ends. The top carries the title and the bottom carries
         // the current event card, and a flyer photo can be bright anywhere, so
         // the overlay never thins out in the middle.
-        backgroundImage: `linear-gradient(rgba(10, 4, 20, 0.86), rgba(10, 4, 20, 0.62), rgba(10, 4, 20, 0.88)), url('${bgUrl}')`,
+        backgroundImage: `linear-gradient(rgba(10, 4, 20, 0.86), rgba(10, 4, 20, 0.62), rgba(10, 4, 20, 0.88)), ${cssUrl(bgUrl)}`,
       }}
       onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
+      onMouseLeave={() => setPaused(prefersReducedMotion())}
       onMouseDown={(e) => startDrag(e.clientX)}
       onMouseMove={(e) => moveDrag(e.clientX)}
       onMouseUp={(e) => endDrag(e.clientX)}
@@ -109,7 +125,7 @@ export default function Hero({ events = [] }) {
 
         {/* Current slide */}
         {hasSlides && (
-          <div className="w-full max-w-3xl">
+          <div className="w-full max-w-3xl" aria-live={paused ? "polite" : "off"}>
             <p className="font-inter text-xs font-semibold uppercase tracking-[0.2em] text-[#fde68a]">
               Upcoming event
             </p>
@@ -117,8 +133,8 @@ export default function Hero({ events = [] }) {
               {current.title}
             </h2>
             <p className="mt-1 font-inter text-white/85">
-              {current.date}
-              {current.time ? ` • ${current.time}` : ""}
+              {formatEventDate(current.date)}
+              {current.time ? ` • ${formatEventTime(current.time)}` : ""}
             </p>
             <Link
               to="/events"
@@ -156,13 +172,13 @@ export default function Hero({ events = [] }) {
                 key={i}
                 type="button"
                 aria-label={`Go to event ${i + 1}`}
+                aria-current={i === index % slides.length ? "true" : undefined}
                 onClick={() => {
-                  setPaused(true);
+                  pauseThenResume();
                   setIndex(i);
-                  setTimeout(() => setPaused(false), AUTO_MS);
                 }}
                 className={`h-1.5 rounded-full transition-all duration-300 ${
-                  i === index ? "w-8 bg-[#ffd700]" : "w-1.5 bg-white/50"
+                  i === index % slides.length ? "w-8 bg-[#ffd700]" : "w-1.5 bg-white/50"
                 }`}
               />
             ))}

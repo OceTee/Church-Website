@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { apiFetch } from "../../lib/api";
 import { createWithUpload } from "../../lib/uploads";
+import { formatEventDate, formatEventTime, isPastEvent } from "../../lib/events";
 import {
   cardClass,
   sectionTitleClass,
@@ -52,7 +53,9 @@ export default function EventManager({ events, onChanged, onError }) {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async ({ id, title }) => {
+    if (!window.confirm(`Delete the event "${title}"? This cannot be undone.`)) return;
+
     try {
       const response = await apiFetch(`/events/${id}`, { method: "DELETE" });
       if (!response.ok) throw new Error("Failed to delete event");
@@ -86,13 +89,15 @@ export default function EventManager({ events, onChanged, onError }) {
               <label className={labelClass} htmlFor="event-date">
                 Date
               </label>
+              {/* Real date/time values, so events sort correctly and past
+                  ones drop off the public pages automatically. */}
               <input
                 id="event-date"
+                type="date"
                 className={inputClass}
                 required
                 value={form.date}
                 onChange={(event) => update("date", event.target.value)}
-                placeholder="31st Oct"
               />
             </div>
             <div>
@@ -101,11 +106,11 @@ export default function EventManager({ events, onChanged, onError }) {
               </label>
               <input
                 id="event-time"
+                type="time"
                 className={inputClass}
                 required
                 value={form.time}
                 onChange={(event) => update("time", event.target.value)}
-                placeholder="3:00PM"
               />
             </div>
           </div>
@@ -147,7 +152,7 @@ export default function EventManager({ events, onChanged, onError }) {
         Current Events
       </h3>
       {events.length === 0 ? (
-        <p className="font-inter italic text-gray-400">No upcoming events.</p>
+        <p className="font-inter italic text-gray-400">No events.</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {events.map((event) => (
@@ -157,12 +162,17 @@ export default function EventManager({ events, onChanged, onError }) {
                   {event.title}
                 </h4>
                 <p className="font-inter text-sm text-gray-500">
-                  {event.date} at {event.time}
+                  {formatEventDate(event.date)} at {formatEventTime(event.time)}
+                  {isPastEvent(event) && (
+                    <span className="ml-2 rounded-full bg-gray-200 px-2 py-0.5 text-xs font-semibold text-gray-600">
+                      Past: hidden from the website
+                    </span>
+                  )}
                 </p>
               </div>
               <button
                 type="button"
-                onClick={() => handleDelete(event.id)}
+                onClick={() => handleDelete(event)}
                 aria-label={`Delete ${event.title}`}
                 className={dangerButtonClass}
               >

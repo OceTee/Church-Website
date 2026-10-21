@@ -2,11 +2,12 @@ import { useCallback, useEffect, useState } from "react";
 import { Maximize2 } from "lucide-react";
 import Header from "../components/Header";
 import ImageLightbox from "../components/ImageLightbox";
-import { apiFetch, assetUrl } from "../lib/api";
+import { apiJson, assetUrl } from "../lib/api";
 
 export default function Gallery() {
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const [activeIndex, setActiveIndex] = useState(null);
 
   useEffect(() => {
@@ -14,13 +15,18 @@ export default function Gallery() {
 
     const loadPhotos = async () => {
       try {
-        const response = await apiFetch("/gallery");
-        const data = await response.json();
+        const data = await apiJson("/gallery");
         if (active) {
-          setPhotos(data.map((photo) => ({ ...photo, fullUrl: assetUrl(photo.imageUrl) })));
+          setPhotos(
+            (Array.isArray(data) ? data : []).map((photo) => ({
+              ...photo,
+              fullUrl: assetUrl(photo.imageUrl),
+            }))
+          );
         }
       } catch (error) {
         console.error("Failed to fetch gallery:", error);
+        if (active) setFailed(true);
       } finally {
         if (active) setLoading(false);
       }
@@ -54,6 +60,10 @@ export default function Gallery() {
 
         {loading ? (
           <p className="font-inter text-gray-500">Loading gallery...</p>
+        ) : failed ? (
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 py-20 text-center font-inter italic text-gray-500">
+            The gallery could not be loaded just now. Please try again shortly.
+          </div>
         ) : photos.length === 0 ? (
           <div className="rounded-2xl border border-gray-200 bg-gray-50 py-20 text-center font-inter italic text-gray-500">
             No photos added yet. Check back soon!

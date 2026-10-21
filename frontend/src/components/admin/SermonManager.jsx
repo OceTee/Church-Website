@@ -44,7 +44,9 @@ export default function SermonManager({ sermons, onChanged, onError }) {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async ({ id, title }) => {
+    if (!window.confirm(`Delete the sermon "${title}"? This cannot be undone.`)) return;
+
     try {
       const response = await apiFetch(`/sermons/${id}`, { method: "DELETE" });
       if (!response.ok) throw new Error("Failed to delete sermon");
@@ -139,7 +141,7 @@ export default function SermonManager({ sermons, onChanged, onError }) {
               </div>
               <button
                 type="button"
-                onClick={() => handleDelete(sermon.id)}
+                onClick={() => handleDelete(sermon)}
                 aria-label={`Delete ${sermon.title}`}
                 className={dangerButtonClass}
               >

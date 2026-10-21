@@ -1,14 +1,18 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { X, Copy, Check } from "lucide-react";
 import { site } from "../config/site";
 
 export default function GiveOverlay({ isOpen, onClose }) {
   const [copied, setCopied] = useState(null);
+  const copiedTimer = useRef(null);
 
   const handleClose = useCallback(() => {
+    clearTimeout(copiedTimer.current);
     setCopied(null);
     onClose();
   }, [onClose]);
+
+  useEffect(() => () => clearTimeout(copiedTimer.current), []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -33,7 +37,8 @@ export default function GiveOverlay({ isOpen, onClose }) {
     try {
       await navigator.clipboard.writeText(value);
       setCopied(key);
-      setTimeout(() => setCopied(null), 2000);
+      clearTimeout(copiedTimer.current);
+      copiedTimer.current = setTimeout(() => setCopied(null), 2000);
     } catch {
       setCopied(null);
     }
@@ -42,7 +47,7 @@ export default function GiveOverlay({ isOpen, onClose }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
+      onClick={handleClose}
       role="dialog"
       aria-modal="true"
       aria-label="Give"
@@ -55,7 +60,7 @@ export default function GiveOverlay({ isOpen, onClose }) {
       >
         <button
           type="button"
-          onClick={onClose}
+          onClick={handleClose}
           aria-label="Close"
           className="absolute right-4 top-4 text-gray-400 transition hover:text-gray-700"
         >

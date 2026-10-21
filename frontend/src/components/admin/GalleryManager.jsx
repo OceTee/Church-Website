@@ -39,7 +39,11 @@ export default function GalleryManager({ photos, onChanged, onError }) {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (photo) => {
+    const label = photo.date ? `the photo from ${photo.date}` : "this photo";
+    if (!window.confirm(`Delete ${label}? This cannot be undone.`)) return;
+
+    const { id } = photo;
     try {
       const response = await apiFetch(`/gallery/${id}`, { method: "DELETE" });
       if (!response.ok) throw new Error("Failed to delete photo");
@@ -108,7 +112,7 @@ export default function GalleryManager({ photos, onChanged, onError }) {
           {photos.map((photo) => (
             <figure
               key={photo.id}
-              className="group relative overflow-hidden rounded-lg border"
+              className="overflow-hidden rounded-lg border bg-white"
             >
               <img
                 src={assetUrl(photo.imageUrl)}
@@ -116,11 +120,13 @@ export default function GalleryManager({ photos, onChanged, onError }) {
                 loading="lazy"
                 className="h-32 w-full object-cover"
               />
-              <figcaption className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                <p className="font-inter text-xs text-white">{photo.date}</p>
+              {/* Always visible: a hover-only button cannot be seen on a
+                  phone but can still be tapped by accident. */}
+              <figcaption className="flex items-center justify-between gap-2 p-2">
+                <p className="truncate font-inter text-xs text-gray-600">{photo.date}</p>
                 <button
                   type="button"
-                  onClick={() => handleDelete(photo.id)}
+                  onClick={() => handleDelete(photo)}
                   aria-label={`Delete photo from ${photo.date}`}
                   className={dangerButtonClass}
                 >

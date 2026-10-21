@@ -1,22 +1,24 @@
 import { useEffect, useState } from "react";
 import Header from "../components/Header";
 import MiniCalendar from "../components/MiniCalendar";
-import { apiFetch } from "../lib/api";
+import { apiJson } from "../lib/api";
+import { upcomingEvents } from "../lib/events";
 
 export default function Events() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let active = true;
 
     const loadEvents = async () => {
       try {
-        const response = await apiFetch("/events");
-        const data = await response.json();
-        if (active) setEvents(data);
+        const data = await apiJson("/events");
+        if (active) setEvents(upcomingEvents(Array.isArray(data) ? data : []));
       } catch (error) {
         console.error("Failed to fetch events:", error);
+        if (active) setFailed(true);
       } finally {
         if (active) setLoading(false);
       }
@@ -38,6 +40,10 @@ export default function Events() {
 
         {loading ? (
           <p className="font-inter text-gray-500">Loading events...</p>
+        ) : failed ? (
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 py-16 text-center font-inter italic text-gray-500">
+            Events could not be loaded just now. Please try again shortly.
+          </div>
         ) : events.length === 0 ? (
           <div className="rounded-2xl border border-gray-200 bg-gray-50 py-16 text-center font-inter italic text-gray-500">
             No upcoming events right now. Check back soon!

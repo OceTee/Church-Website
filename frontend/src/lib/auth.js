@@ -115,7 +115,9 @@ export async function changePassword(currentPassword, newPassword) {
 
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    clearToken();
+    // Only an expired session ends the sign-in. A mistyped current password
+    // (400) must leave the admin signed in so they can simply try again.
+    if (response.status === 401) clearToken();
     throw new Error(data.error || "Unable to change the password");
   }
 

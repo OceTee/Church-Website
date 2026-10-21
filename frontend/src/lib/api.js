@@ -1,7 +1,7 @@
 import { apiUrl } from "./urls";
 import { getToken, clearToken } from "./auth";
 
-export { apiUrl, assetUrl } from "./urls";
+export { apiUrl, assetUrl, cssUrl } from "./urls";
 
 export async function apiFetch(path, options = {}) {
   const headers = new Headers(options.headers || {});

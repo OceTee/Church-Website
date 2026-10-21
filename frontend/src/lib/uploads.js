@@ -25,13 +25,13 @@ async function uploadDirect(category, file) {
 
     const { upload } = await import("@vercel/blob/client");
 
-    const blob = await upload(file.name, file, {
+    // The server adds a random suffix to the pathname, so two photos that are
+    // both called IMG_0001.jpg do not collide.
+    const blob = await upload(`${category}/${file.name}`, file, {
         access: "public",
         handleUploadUrl: `${apiUrl("/blob-upload")}?grant=${encodeURIComponent(grant)}`,
-        clientPayload: {
-            category,
-            meta: { name: file.name, type: file.type, size: file.size },
-        },
+        // The blob client's contract is a string; the server parses it.
+        clientPayload: JSON.stringify({ category }),
     });
 
     return blob.url;

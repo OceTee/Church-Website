@@ -5,10 +5,20 @@ import Hero from "../components/Hero";
 import ServiceSchedule from "../components/ServiceSchedule";
 import MiniSermon from "../components/MiniSermon";
 import MiniCalendar from "../components/MiniCalendar";
-import { apiFetch } from "../lib/api";
+import { apiJson } from "../lib/api";
+import { upcomingEvents } from "../lib/events";
 
 const EMPTY_MESSAGE =
   "rounded-xl border border-gray-200 bg-gray-50 py-8 text-center font-inter italic text-gray-500";
+
+const LANDING_EVENT_COUNT = 3;
+
+/** The list from a settled request, or [] if it failed or was not a list. */
+function listFrom(result, label) {
+  if (result.status === "fulfilled" && Array.isArray(result.value)) return result.value;
+  if (result.status === "rejected") console.error(`Failed to load ${label}:`, result.reason);
+  return [];
+}
 
 export default function Landing() {
   const [events, setEvents] = useState([]);
@@ -18,25 +28,17 @@ export default function Landing() {
   useEffect(() => {
     let active = true;
 
+    // Loaded independently, so one failing request still shows the other.
     const loadContent = async () => {
-      try {
-        const [eventsResponse, sermonsResponse] = await Promise.all([
-          apiFetch("/events"),
-          apiFetch("/sermons"),
-        ]);
-        const [eventsData, sermonsData] = await Promise.all([
-          eventsResponse.json(),
-          sermonsResponse.json(),
-        ]);
+      const [eventsResult, sermonsResult] = await Promise.allSettled([
+        apiJson("/events"),
+        apiJson("/sermons"),
+      ]);
 
-        if (!active) return;
-        setEvents(eventsData);
-        setSermons(sermonsData.slice(0, 3));
-      } catch (error) {
-        console.error("Failed to load landing content:", error);
-      } finally {
-        if (active) setLoading(false);
-      }
+      if (!active) return;
+      setEvents(upcomingEvents(listFrom(eventsResult, "events")));
+      setSermons(listFrom(sermonsResult, "sermons").slice(0, 3));
+      setLoading(false);
     };
 
     loadContent();
@@ -102,13 +104,14 @@ export default function Landing() {
           <p className={EMPTY_MESSAGE}>No upcoming events right now.</p>
         ) : (
           <div className="flex flex-col">
-            {events.map((event) => (
+            {events.slice(0, LANDING_EVENT_COUNT).map((event) => (
               <MiniCalendar
                 key={event.id}
                 title={event.title}
                 sub={event.description}
                 date={event.date}
                 time={event.time}
+                flyerUrl={event.flyerUrl}
               />
             ))}
           </div>

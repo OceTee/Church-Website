@@ -1,21 +1,26 @@
 import { useState, useEffect } from "react";
-import { assetUrl } from "../lib/api";
+import { assetUrl, cssUrl } from "../lib/api";
+import { formatEventDate, formatEventTime } from "../lib/events";
 
 // Photo-first, text overlaid, maintaining the image's natural aspect ratio
-export default function MiniCalendar({ title, sub, date, time, flyerUrl }) {
+export default function MiniCalendar({ title, sub, date: rawDate, time: rawTime, flyerUrl }) {
   const [aspectRatio, setAspectRatio] = useState(null);
+  const date = formatEventDate(rawDate);
+  const time = formatEventTime(rawTime);
 
   useEffect(() => {
     if (!flyerUrl) return;
+    let active = true;
     const img = new Image();
-    img.src = assetUrl(flyerUrl);
     img.onload = () => {
-      if (img.naturalWidth && img.naturalHeight) {
+      if (active && img.naturalWidth && img.naturalHeight) {
         setAspectRatio(img.naturalWidth / img.naturalHeight);
       }
     };
-    img.onerror = () => {
-      // Image failed to load, aspectRatio stays null
+    // If the image fails to load, aspectRatio stays null.
+    img.src = assetUrl(flyerUrl);
+    return () => {
+      active = false;
     };
   }, [flyerUrl]);
 
@@ -28,7 +33,7 @@ export default function MiniCalendar({ title, sub, date, time, flyerUrl }) {
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           zIndex: 0,
-          backgroundImage: `linear-gradient(to top, rgba(10, 4, 20, 0.65), transparent 60%), url('${flyerUrl ? assetUrl(flyerUrl) : '/BG.svg'}')`,
+          backgroundImage: `linear-gradient(to top, rgba(10, 4, 20, 0.65), transparent 60%), ${cssUrl(flyerUrl ? assetUrl(flyerUrl) : "/BG.svg")}`,
         }}
       />
 

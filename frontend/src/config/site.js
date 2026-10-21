@@ -1,5 +1,4 @@
-// Central place for content that is still placeholder, so it can be
-// swapped out in one spot once the church supplies the real details.
+// Central place for the church's details, so they can be updated in one spot.
 
 export const site = {
   name: "CAC Possibility Assembly Nation",
@@ -12,13 +11,11 @@ export const site = {
     street2: "116 Coldyhill Lane Scarborough,UK.",
     area2: "YO12 6SD."
   },
-  // TODO: replace with the real YouTube channel and handle.
   youtube: {
     channelId: "UCtVJZfShbwIz2dUNgcvIA0g",
     handle: "@cacpossibilityassembly881",
-    url: "https://youtube.com/@cacpossibilityassembly881?si=s1hx-j8EZb8nb9ei",
+    url: "https://www.youtube.com/@cacpossibilityassembly881",
   },
-  // TODO: replace with the real giving account details.
   giving: {
     accountNumber: "0094737421",
     accountName: "CAC POSSIBILITY ASSEMBLY",
@@ -34,21 +31,19 @@ export const site = {
       details: ["Mid Week Service • 5:30 PM", "Global Bible Study • 8:00 PM"],
     },
   ],
-  // TODO: replace with the real contact details.
   contact: {
     email: "cacpossibilityassembly@gmail.com",
     phone: "+44 7549 041124",
     phone2: "+234 803 835 0175",
   },
-  // TODO: replace href values with the real profile URLs. They currently
-  // point at the internal Connect page so every link resolves.
+  // Add Instagram/TikTok here once the church has profile URLs (icons
+  // "camera" and "music"). They were removed rather than left pointing at the
+  // Connect page, which made them look like broken links.
   socials: [
     { label: "CAC Possibility Assembly", icon: "globe", href: "/" },
     { label: "Generational Blessing Mandate", icon: "send", href: "https://t.me/PossibilityAssemblyMedia" },
     { label: "Possibility Assembly Nation Messages", icon: "send", href: "https://t.me/PossibilityAssemblyNation" },
     { label: "Possibility Members", icon: "message-circle", href: "https://chat.whatsapp.com/FHGa9V7QRV09yA8vG2vUKO" },
-    { label: "Instagram", icon: "camera", href: "/connect" },
-    { label: "TikTok", icon: "music", href: "/connect" },
   ],
 };
 

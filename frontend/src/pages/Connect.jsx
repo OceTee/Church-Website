@@ -6,7 +6,9 @@ import SocialLinks from "../components/SocialLinks";
 import { site } from "../config/site";
 import { apiJson } from "../lib/api";
 
-const EMPTY_FORM = { name: "", email: "", message: "" };
+// `website` is a honeypot: hidden from people, filled in by spam bots, and
+// used by the API to drop the message silently.
+const EMPTY_FORM = { name: "", email: "", message: "", website: "" };
 
 export default function Connect() {
   const [form, setForm] = useState(EMPTY_FORM);
@@ -111,6 +113,18 @@ export default function Connect() {
             </p>
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <div aria-hidden="true" className="absolute left-[-9999px] h-px w-px overflow-hidden">
+                <label>
+                  Website
+                  <input
+                    name="website"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={form.website}
+                    onChange={handleChange}
+                  />
+                </label>
+              </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <input
                   name="name"
