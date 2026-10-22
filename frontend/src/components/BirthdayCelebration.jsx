@@ -6,25 +6,11 @@ import { fetchBirthdaysForMonth, todaysBirthdays } from "../lib/birthdays";
 import { todayIso } from "../lib/dates";
 import { assetUrl } from "../lib/api";
 
-// Remembers that the visitor closed today's celebration, so it does not
-// reappear on every visit to the home page that day.
-const DISMISSED_KEY = "cac_birthday_dismissed";
-
-function dismissedToday(today) {
-  try {
-    return localStorage.getItem(DISMISSED_KEY) === today;
-  } catch {
-    return false;
-  }
-}
-
-function rememberDismissed(today) {
-  try {
-    localStorage.setItem(DISMISSED_KEY, today);
-  } catch {
-    /* storage unavailable: it simply shows again next visit */
-  }
-}
+// Whether the visitor closed the celebration during this page load. Kept in
+// memory rather than in storage on purpose: it stays closed while they move
+// around the site, but a reload shows it again, so the admin can review it
+// and members do not miss it because they once pressed the X.
+let dismissed = false;
 
 /**
  * The celebrant's photo, uncropped at its own aspect ratio, framed with
@@ -72,7 +58,7 @@ export default function BirthdayCelebration() {
   useEffect(() => {
     let active = true;
     const today = todayIso();
-    if (dismissedToday(today)) return undefined;
+    if (dismissed) return undefined;
 
     fetchBirthdaysForMonth(today.slice(0, 7))
       .then((birthdays) => {
@@ -89,7 +75,7 @@ export default function BirthdayCelebration() {
   }, []);
 
   const close = () => {
-    rememberDismissed(todayIso());
+    dismissed = true;
     setOpen(false);
   };
 
