@@ -146,8 +146,11 @@
    on exit the whole emblem expands and fades as the page beneath scales in
    from the centre. The 650ms exit length is mirrored by LEAVE_MS in
    LoadingScreen.jsx. */
+/* A symmetric ease, so the emblem dwells equally at the top and bottom of
+   its travel and its average position is the exact centre. A floor-style
+   bounce curve would linger at the top and read as sitting high. */
 .loader-emblem {
-    animation: loader-bounce 560ms cubic-bezier(0.28, 0.84, 0.42, 1) infinite alternate;
+    animation: loader-bounce 640ms cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
     will-change: transform;
 }
 
@@ -169,9 +172,20 @@
     animation: page-reveal 700ms var(--ease-finesse) both;
 }
 
+/* Symmetric about the centre, so the emblem's midpoint is the exact centre
+   of the viewport rather than sitting above it for most of each bounce. */
 @keyframes loader-bounce {
-    from { transform: translateY(0.382rem); }
-    to { transform: translateY(-0.618rem); }
+    from { transform: translateY(0.5rem); }
+    to { transform: translateY(-0.5rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    /* The site collapses animations to their last frame for visitors who
+       prefer less motion, which would freeze the emblem at the top of its
+       bounce, off centre. Hold it still at the centre instead. */
+    .loader-emblem {
+        animation: none;
+    }
 }
 
 @keyframes loader-emblem-leave {
