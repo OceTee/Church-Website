@@ -73,7 +73,8 @@ export default function LoadingScreen({ duration, ready = true, onLeaving, onDon
         leaving ? "loader-leave" : ""
       }`}
     >
-      <div className="relative flex h-[11.09rem] w-[11.09rem] items-center justify-center">
+      {/* The ring and the mark bounce, expand and fade together as one emblem. */}
+      <div className="loader-emblem relative flex h-[11.09rem] w-[11.09rem] items-center justify-center">
         <svg
           viewBox="0 0 100 100"
           aria-hidden="true"
@@ -98,7 +99,7 @@ export default function LoadingScreen({ duration, ready = true, onLeaving, onDon
           width={230}
           height={230}
           fetchPriority="high"
-          className="loader-mark h-[6.854rem] w-[6.854rem] object-contain"
+          className="h-[6.854rem] w-[6.854rem] object-contain"
         />
       </div>
     </div>

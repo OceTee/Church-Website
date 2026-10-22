@@ -142,10 +142,11 @@
 }
 
 /* --- Loading screen -------------------------------------------------------
-   The mark bounces while the ring fills; on exit the mark expands and fades
-   as the page beneath scales in from the centre. The 650ms exit length is
-   mirrored by LEAVE_MS in LoadingScreen.jsx. */
-.loader-mark {
+   The emblem (the mark with its progress ring) bounces while the ring fills;
+   on exit the whole emblem expands and fades as the page beneath scales in
+   from the centre. The 650ms exit length is mirrored by LEAVE_MS in
+   LoadingScreen.jsx. */
+.loader-emblem {
     animation: loader-bounce 560ms cubic-bezier(0.28, 0.84, 0.42, 1) infinite alternate;
     will-change: transform;
 }
@@ -159,12 +160,8 @@
     pointer-events: none;
 }
 
-.loader-leave .loader-ring {
-    animation: fade-out 240ms ease-out forwards;
-}
-
-.loader-leave .loader-mark {
-    animation: loader-mark-leave 650ms var(--ease-finesse) forwards;
+.loader-leave .loader-emblem {
+    animation: loader-emblem-leave 650ms var(--ease-finesse) forwards;
 }
 
 .page-reveal {
@@ -177,7 +174,7 @@
     to { transform: translateY(-0.618rem); }
 }
 
-@keyframes loader-mark-leave {
+@keyframes loader-emblem-leave {
     from { opacity: 1; transform: scale(1); }
     to { opacity: 0; transform: scale(7); }
 }
