@@ -139,15 +139,57 @@
         transform: translateY(-2px);
     }
 
-    main > div {
-        animation: page-arrive 520ms var(--ease-finesse);
-    }
-
 }
 
-@keyframes page-arrive {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
+/* --- Loading screen -------------------------------------------------------
+   The mark bounces while the ring fills; on exit the mark expands and fades
+   as the page beneath scales in from the centre. The 650ms exit length is
+   mirrored by LEAVE_MS in LoadingScreen.jsx. */
+.loader-mark {
+    animation: loader-bounce 560ms cubic-bezier(0.28, 0.84, 0.42, 1) infinite alternate;
+    will-change: transform;
+}
+
+.loader-ring circle:last-child {
+    transition: stroke-dashoffset 120ms linear;
+}
+
+.loader-leave {
+    animation: fade-out 650ms var(--ease-finesse) forwards;
+    pointer-events: none;
+}
+
+.loader-leave .loader-ring {
+    animation: fade-out 240ms ease-out forwards;
+}
+
+.loader-leave .loader-mark {
+    animation: loader-mark-leave 650ms var(--ease-finesse) forwards;
+}
+
+.page-reveal {
+    transform-origin: 50% 40%;
+    animation: page-reveal 700ms var(--ease-finesse) both;
+}
+
+@keyframes loader-bounce {
+    from { transform: translateY(0.382rem); }
+    to { transform: translateY(-0.618rem); }
+}
+
+@keyframes loader-mark-leave {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0; transform: scale(7); }
+}
+
+@keyframes fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes page-reveal {
+    from { opacity: 0; transform: scale(0.92); }
+    to { opacity: 1; transform: none; }
 }
 
 @keyframes menu-arrive {
@@ -204,10 +246,6 @@
 
 @media (max-width: 639px) {
     html { scroll-padding-top: 5rem; }
-
-    main > div {
-        animation-duration: 420ms;
-    }
 
     input,
     textarea,

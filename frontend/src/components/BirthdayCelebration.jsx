@@ -5,6 +5,7 @@ import SpeakerAvatar from "./SpeakerAvatar";
 import { fetchBirthdaysForMonth, todaysBirthdays } from "../lib/birthdays";
 import { todayIso } from "../lib/dates";
 import { assetUrl } from "../lib/api";
+import { whenAppIdle } from "../lib/appReady";
 
 // Whether the visitor closed the celebration during this page load. Kept in
 // memory rather than in storage on purpose: it stays closed while they move
@@ -60,8 +61,10 @@ export default function BirthdayCelebration() {
     const today = todayIso();
     if (dismissed) return undefined;
 
-    fetchBirthdaysForMonth(today.slice(0, 7))
-      .then((birthdays) => {
+    // Wait for the loading screen too, so the slide-up and the confetti are
+    // not spent hidden behind it.
+    Promise.all([fetchBirthdaysForMonth(today.slice(0, 7)), whenAppIdle()])
+      .then(([birthdays]) => {
         if (!active || !Array.isArray(birthdays)) return;
         const todays = todaysBirthdays(birthdays, today);
         setCelebrants(todays);
