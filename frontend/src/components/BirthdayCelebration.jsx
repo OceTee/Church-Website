@@ -4,6 +4,7 @@ import Confetti from "./Confetti";
 import SpeakerAvatar from "./SpeakerAvatar";
 import { fetchBirthdaysForMonth, todaysBirthdays } from "../lib/birthdays";
 import { todayIso } from "../lib/dates";
+import { assetUrl } from "../lib/api";
 
 // Remembers that the visitor closed today's celebration, so it does not
 // reappear on every visit to the home page that day.
@@ -26,12 +27,43 @@ function rememberDismissed(today) {
 }
 
 /**
+ * The celebrant's photo, uncropped at its own aspect ratio, framed with
+ * rounded corners and a gold ring. Its height is capped on the golden ratio
+ * scale (and by the screen height on a phone); the width follows the photo.
+ * If the photo cannot load, the initials circle is shown instead.
+ */
+function CelebrantPhoto({ name, src, single }) {
+  const [failed, setFailed] = useState(false);
+
+  if (!src || failed) {
+    return (
+      <SpeakerAvatar
+        name={name}
+        className="h-[6.854rem] w-[6.854rem] rounded-full shadow-lg ring-4 ring-[#ffd700] ring-offset-2"
+        initialsClassName="text-gr-lg"
+      />
+    );
+  }
+
+  return (
+    <img
+      src={assetUrl(src)}
+      alt={`Photo of ${name}`}
+      onError={() => setFailed(true)}
+      className={`block h-auto w-auto max-w-full rounded-2xl object-contain shadow-lg ring-4 ring-[#ffd700] ring-offset-2 ${
+        single ? "max-h-[min(17.944rem,38dvh)]" : "max-h-[min(11.09rem,30dvh)]"
+      }`}
+    />
+  );
+}
+
+/**
  * On a member's birthday the home page throws confetti and slides up a card
  * from the bottom of the screen with the celebrant's photo, their name beneath
  * it, and the church's wishes. It loads the current month's birthdays and
  * shows those dated today. Sizes follow the golden ratio scale: the photo is
- * φ⁵ (11.09rem) for a single celebrant and φ⁴ (6.854rem) when several share
- * the day, with 1.618rem spacing.
+ * up to φ⁶ (17.944rem) tall for a single celebrant and φ⁵ (11.09rem) when
+ * several share the day, with 1.618rem spacing.
  */
 export default function BirthdayCelebration() {
   const [celebrants, setCelebrants] = useState([]);
@@ -98,18 +130,9 @@ export default function BirthdayCelebration() {
                   <li
                     key={celebrant.id}
                     style={{ "--birthday-index": index }}
-                    className={`birthday-item flex flex-col items-center gap-[0.618rem] ${single ? "w-full" : "w-[11.09rem]"}`}
+                    className={`birthday-item flex flex-col items-center gap-[0.618rem] ${single ? "w-full" : "max-w-[17.944rem] grow basis-[11.09rem]"}`}
                   >
-                    <SpeakerAvatar
-                      name={celebrant.name}
-                      src={celebrant.photoUrl}
-                      className={`rounded-full shadow-lg ring-4 ring-[#ffd700] ring-offset-2 ${
-                        single
-                          ? "h-[6.854rem] w-[6.854rem] md:h-[11.09rem] md:w-[11.09rem]"
-                          : "h-[6.854rem] w-[6.854rem]"
-                      }`}
-                      initialsClassName={single ? "text-gr-lg md:text-gr-xl" : "text-gr-lg"}
-                    />
+                    <CelebrantPhoto name={celebrant.name} src={celebrant.photoUrl} single={single} />
                     <p className="font-palatino text-gr-md font-bold text-[#330040]">{celebrant.name}</p>
                     <p className="whitespace-pre-line font-nunito text-sm leading-[1.618] text-gray-600 md:text-base">
                       {celebrant.wishes}
