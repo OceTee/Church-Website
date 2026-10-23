@@ -2,7 +2,12 @@ import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { apiFetch } from "../../lib/api";
 import { createWithUpload } from "../../lib/uploads";
-import { formatEventDate, formatEventTime, isPastEvent } from "../../lib/events";
+import {
+  eventStatus,
+  formatEventRange,
+  formatEventTime,
+  isPastEvent,
+} from "../../lib/events";
 import {
   cardClass,
   sectionTitleClass,
@@ -17,9 +22,27 @@ const EMPTY_FORM = {
   title: "",
   description: "",
   date: "",
+  // Set when the event runs over several days; `endDate` is its last day.
+  multiDay: false,
+  endDate: "",
   time: "",
   flyer: null,
 };
+
+/** "Happening now · Day 3 of 11", "Past: hidden from the website", or null. */
+function statusTag(event) {
+  const status = eventStatus(event);
+  if (status.state === "ongoing") {
+    return {
+      text: status.totalDays > 1 ? `Happening now · Day ${status.day} of ${status.totalDays}` : "Today",
+      className: "bg-[#ffd700] text-black",
+    };
+  }
+  if (isPastEvent(event)) {
+    return { text: "Past: hidden from the website", className: "bg-gray-200 text-gray-600" };
+  }
+  return null;
+}
 
 export default function EventManager({ events, onChanged, onError }) {
   const [form, setForm] = useState(EMPTY_FORM);
@@ -39,6 +62,8 @@ export default function EventManager({ events, onChanged, onError }) {
           title: form.title,
           description: form.description,
           date: form.date,
+          // Only sent for a multi-day event; a single day has no end date.
+          ...(form.multiDay && form.endDate ? { endDate: form.endDate } : {}),
           time: form.time,
         },
       });
@@ -87,7 +112,7 @@ export default function EventManager({ events, onChanged, onError }) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelClass} htmlFor="event-date">
-                Date
+                {form.multiDay ? "First Day" : "Date"}
               </label>
               {/* Real date/time values, so events sort correctly and past
                   ones drop off the public pages automatically. */}
@@ -114,6 +139,42 @@ export default function EventManager({ events, onChanged, onError }) {
               />
             </div>
           </div>
+        </div>
+
+        {/* A single day by default; tick to give the programme a last day, so
+            it shows as a span ("22 Nov – 2 Dec") and stays up until it ends. */}
+        <div className="flex flex-col gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4 md:flex-row md:items-center md:gap-6">
+          <label className="flex items-center gap-2 font-nunito text-sm font-semibold text-gray-700">
+            <input
+              type="checkbox"
+              checked={form.multiDay}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  multiDay: event.target.checked,
+                  endDate: event.target.checked ? current.endDate : "",
+                }))
+              }
+              className="h-4 w-4 accent-[#65007f]"
+            />
+            This event runs over several days
+          </label>
+          {form.multiDay && (
+            <div className="flex items-center gap-3">
+              <label className={`${labelClass} mb-0 whitespace-nowrap`} htmlFor="event-end-date">
+                Last Day
+              </label>
+              <input
+                id="event-end-date"
+                type="date"
+                className={inputClass}
+                required
+                min={form.date || undefined}
+                value={form.endDate}
+                onChange={(event) => update("endDate", event.target.value)}
+              />
+            </div>
+          )}
         </div>
 
         <div>
@@ -162,10 +223,12 @@ export default function EventManager({ events, onChanged, onError }) {
                   {event.title}
                 </h4>
                 <p className="font-nunito text-sm text-gray-500">
-                  {formatEventDate(event.date)} at {formatEventTime(event.time)}
-                  {isPastEvent(event) && (
-                    <span className="ml-2 rounded-full bg-gray-200 px-2 py-0.5 text-xs font-semibold text-gray-600">
-                      Past: hidden from the website
+                  {formatEventRange(event.date, event.endDate)} at {formatEventTime(event.time)}
+                  {statusTag(event) && (
+                    <span
+                      className={`ml-2 rounded-full px-2 py-0.5 text-xs font-semibold ${statusTag(event).className}`}
+                    >
+                      {statusTag(event).text}
                     </span>
                   )}
                 </p>

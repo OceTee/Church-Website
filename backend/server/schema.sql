@@ -9,11 +9,15 @@ CREATE TABLE IF NOT EXISTS gallery (
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- `date` is the (first) day; `endDate` is set only when an event runs over
+-- several days and holds its last day. Older databases gain the column
+-- through migrateEventsEndDate() in db.js.
 CREATE TABLE IF NOT EXISTS events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
     date TEXT NOT NULL,
+    endDate TEXT,
     time TEXT NOT NULL,
     flyerUrl TEXT,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP

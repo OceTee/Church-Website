@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Radio, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { assetUrl, cssUrl } from "../lib/api";
-import { formatEventDate, formatEventTime, upcomingEvents } from "../lib/events";
+import { formatEventRange, formatEventTime, upcomingEvents } from "../lib/events";
 import { site } from "../config/site";
 import churchLogos from "../assets/church-logos.png";
 
@@ -142,7 +142,7 @@ export default function Hero({ events = [] }) {
               {current.title}
             </h2>
             <p className="mt-1 font-nunito text-white/85">
-              {formatEventDate(current.date)}
+              {formatEventRange(current.date, current.endDate)}
               {current.time ? ` • ${formatEventTime(current.time)}` : ""}
             </p>
             <Link

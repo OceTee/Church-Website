@@ -108,6 +108,7 @@ export default function Landing() {
                 title={event.title}
                 sub={event.description}
                 date={event.date}
+                endDate={event.endDate}
                 time={event.time}
                 flyerUrl={event.flyerUrl}
               />

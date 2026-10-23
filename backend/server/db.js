@@ -78,6 +78,17 @@ async function migrateSermonsToText(schemaStatements) {
     console.log("[db] Migrated sermons to the written-sermon format.");
 }
 
+/**
+ * Events gained an optional end date so a programme can run over several
+ * days. A database created before that gets the column added once.
+ */
+async function migrateEventsEndDate() {
+    const columns = (await client.execute("PRAGMA table_info(events)")).rows.map((row) => row.name);
+    if (columns.includes("endDate")) return;
+    await client.execute("ALTER TABLE events ADD COLUMN endDate TEXT");
+    console.log("[db] Added events.endDate for multi-day events.");
+}
+
 /** Creates the sample sermon once per database. See placeholderSermon.js. */
 async function seedPlaceholderSermon() {
     const claimed = await client.execute({
@@ -115,6 +126,7 @@ export function ensureSchema() {
 
             await client.batch(statements.map((statement) => ({ sql: statement })), "write");
             await migrateSermonsToText(statements);
+            await migrateEventsEndDate();
             await seedPlaceholderSermon();
         })().catch((error) => {
             // Let the next caller retry instead of caching a failure forever.

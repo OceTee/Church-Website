@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
 import { assetUrl, cssUrl } from "../lib/api";
-import { formatEventDate, formatEventTime } from "../lib/events";
+import { eventStatusLabel, formatEventRange, formatEventTime } from "../lib/events";
 
 // Photo-first, text overlaid, maintaining the image's natural aspect ratio
-export default function MiniCalendar({ title, sub, date: rawDate, time: rawTime, flyerUrl }) {
+export default function MiniCalendar({ title, sub, date: rawDate, endDate, time: rawTime, flyerUrl }) {
   const [aspectRatio, setAspectRatio] = useState(null);
-  const date = formatEventDate(rawDate);
+  // A single day, or the span of a multi-day programme.
+  const date = formatEventRange(rawDate, endDate);
   const time = formatEventTime(rawTime);
+  // "Today", "Day 3 of 11" or "Tomorrow" while the event is live or imminent.
+  const statusLabel = eventStatusLabel({ date: rawDate, endDate });
 
   useEffect(() => {
     if (!flyerUrl) return;
@@ -42,8 +45,16 @@ export default function MiniCalendar({ title, sub, date: rawDate, time: rawTime,
 
       {/* Content layer - all text at the bottom, yellow badge top-right */}
       <div className="relative flex h-full flex-col justify-end p-4 sm:p-5" style={{ zIndex: 20 }}>
-        {/* Top right - yellow date badge only */}
-        <div className="flex justify-end mb-auto">
+        {/* Top row: live status pill on the left, yellow date badge on the right */}
+        <div className="mb-auto flex items-start justify-between gap-3">
+          {statusLabel ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 font-nunito text-xs font-semibold text-white backdrop-blur">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#ffd700]" aria-hidden="true" />
+              {statusLabel}
+            </span>
+          ) : (
+            <span />
+          )}
           <div className="shrink-0 rounded-lg bg-[#ffd700] px-3 py-1.5 text-center">
             <p className="font-nunito text-xs font-bold leading-tight text-black">{date}</p>
             <p className="font-nunito text-[10px] font-medium text-black/70">{time || "Event"}</p>

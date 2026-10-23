@@ -178,7 +178,11 @@ const TEXT_LIMITS = {
     body: 100000,
     name: 120,
     wishes: 2000,
+    endDate: 100,
 };
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const ISO_MONTH = /^\d{4}-\d{2}$/;
 
 function badRequest(res, message) {
     return res.status(400).json({ error: message });
@@ -727,15 +731,26 @@ app.post(
                 title: textField(req.body, "title"),
                 description: textField(req.body, "description"),
                 date: textField(req.body, "date"),
+                endDate: textField(req.body, "endDate"),
                 time: textField(req.body, "time"),
             };
             const existingUrl = textField(req.body, "flyerUrl");
+
+            // An event is a single day unless an end date after the start is
+            // given, in which case it runs over every day between the two.
+            const multiDay = Boolean(fields.endDate) && fields.endDate !== fields.date;
 
             const problem =
                 (!fields.title || !fields.date || !fields.time
                     ? "Title, date and time are required"
                     : null) ||
                 lengthError(fields) ||
+                (multiDay && !(ISO_DATE.test(fields.date) && ISO_DATE.test(fields.endDate))
+                    ? "Start and end dates must both be real dates."
+                    : null) ||
+                (multiDay && fields.endDate < fields.date
+                    ? "The end date cannot be before the start date."
+                    : null) ||
                 (existingUrl && !isSafeMediaUrl(existingUrl) ? "Invalid flyer URL." : null);
             if (problem) {
                 discardUpload(req.file);
@@ -749,9 +764,10 @@ app.post(
                   : null;
 
             const { title, description, date, time } = fields;
+            const endDate = multiDay ? fields.endDate : null;
             const result = await run(
-                "INSERT INTO events (title, description, date, time, flyerUrl) VALUES (?, ?, ?, ?, ?)",
-                [title, description, date, time, flyerUrl]
+                "INSERT INTO events (title, description, date, endDate, time, flyerUrl) VALUES (?, ?, ?, ?, ?, ?)",
+                [title, description, date, endDate, time, flyerUrl]
             );
 
             res.status(201).json({
@@ -759,6 +775,7 @@ app.post(
                 title,
                 description,
                 date,
+                endDate,
                 time,
                 flyerUrl,
             });
@@ -877,8 +894,6 @@ app.delete("/api/sermons/:id", requireAuth, async (req, res) => {
 // with its photo. "Today" here is the date in the UK, the westernmost of the
 // church's two locations: it is never ahead of Ibadan, so a birthday is only
 // removed once it is over in both places.
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-const ISO_MONTH = /^\d{4}-\d{2}$/;
 
 function earliestChurchToday() {
     return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
