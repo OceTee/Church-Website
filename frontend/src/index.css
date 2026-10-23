@@ -249,6 +249,36 @@
     to { opacity: 1; transform: scale(1); }
 }
 
+/* --- Hero event carousel ---------------------------------------------------
+   The bar fills over the slide's duration (set inline from SLIDE_MS); its
+   end is what advances to the next event. Each new flyer fades in over the
+   last, and the event text rises in. */
+.hero-progress {
+    width: 100%;
+    transform-origin: left center;
+    animation-name: hero-progress;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+}
+
+.hero-bg-in {
+    animation: fade-in 900ms ease-out both;
+}
+
+.hero-slide-in {
+    animation: hero-slide-in 600ms var(--ease-finesse) both;
+}
+
+@keyframes hero-progress {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+}
+
+@keyframes hero-slide-in {
+    from { opacity: 0; transform: translateY(0.75rem); }
+    to { opacity: 1; transform: none; }
+}
+
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
     button:not(:disabled):active {
         transform: scale(0.98);

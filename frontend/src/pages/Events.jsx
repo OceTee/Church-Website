@@ -49,7 +49,7 @@ export default function Events() {
             No upcoming events right now. Check back soon!
           </div>
         ) : (
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-[1.618rem]">
             {events.map((event) => (
               <MiniCalendar
                 key={event.id}

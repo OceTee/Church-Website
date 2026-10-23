@@ -101,10 +101,11 @@ export default function Landing() {
         ) : events.length === 0 ? (
           <p className={EMPTY_MESSAGE}>No upcoming events right now.</p>
         ) : (
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-[1.618rem]">
             {events.slice(0, LANDING_EVENT_COUNT).map((event) => (
               <MiniCalendar
                 key={event.id}
+                compact
                 title={event.title}
                 sub={event.description}
                 date={event.date}
