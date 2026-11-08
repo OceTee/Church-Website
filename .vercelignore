@@ -1,0 +1,14 @@
+# Never upload local secrets or local-only data when deploying with the CLI.
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+**/node_modules
+**/dist
+backend/server/database.sqlite*
+backend/public/uploads
+backend/backups
+frontend/test-results
+frontend/playwright-report
