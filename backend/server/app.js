@@ -42,6 +42,15 @@ import {
     isStreamingConfigured,
     STREAM_CHUNK_BYTES,
 } from "./telegram.js";
+import {
+    isTranscriptionConfigured,
+    isValidCallbackSecret,
+    listTranscriptions,
+    getTranscription,
+    startTranscription,
+    applyReport,
+    deleteTranscription,
+} from "./transcriptions.js";
 import nodemailer from "nodemailer";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -679,6 +688,75 @@ app.get("/api/telegram/audio/:id/stream", async (req, res) => {
         console.error(`[telegram] Streaming audio ${id} failed:`, err);
         // Headers are already sent; cutting the response tells the player to retry.
         res.destroy(err);
+    }
+});
+
+// --- SERMON TRANSCRIPTION (runs on GitHub Actions; see transcriptions.js) ---
+
+function jobId(req) {
+    const id = Number(req.params.id);
+    return Number.isInteger(id) && id > 0 ? id : null;
+}
+
+app.get("/api/transcriptions", requireAuth, async (req, res) => {
+    try {
+        res.json({ configured: isTranscriptionConfigured(), jobs: await listTranscriptions() });
+    } catch (err) {
+        serverError(res, err);
+    }
+});
+
+app.get("/api/transcriptions/:id", requireAuth, async (req, res) => {
+    const id = jobId(req);
+    if (!id) return badRequest(res, "Invalid job id.");
+    try {
+        const job = await getTranscription(id);
+        if (!job) return res.status(404).json({ error: "Transcription not found." });
+        res.json(job);
+    } catch (err) {
+        serverError(res, err);
+    }
+});
+
+app.post("/api/transcriptions", requireAuth, async (req, res) => {
+    const audioId = Number(req.body?.audioId);
+    if (!Number.isInteger(audioId) || audioId <= 0) return badRequest(res, "Choose a recording.");
+    if (!isTranscriptionConfigured()) {
+        return res.status(503).json({ error: "Transcription is not set up on the server yet." });
+    }
+    const title = typeof req.body.title === "string" ? req.body.title.slice(0, 200) : null;
+    const date = typeof req.body.date === "string" && ISO_DATE.test(req.body.date) ? req.body.date : null;
+    try {
+        res.status(201).json(await startTranscription({ audioId, title, date }));
+    } catch (err) {
+        console.error("[transcribe] Could not start the job:", err);
+        res.status(502).json({ error: err.message || "Could not start the transcription." });
+    }
+});
+
+// Called by the GitHub Actions job, authenticated by the shared secret.
+app.post("/api/transcriptions/:id/report", async (req, res) => {
+    if (!isValidCallbackSecret(req.get("X-Transcribe-Secret"))) {
+        return res.status(401).json({ error: "Unauthorised." });
+    }
+    const id = jobId(req);
+    if (!id) return badRequest(res, "Invalid job id.");
+    try {
+        const result = await applyReport(id, req.body || {});
+        res.status(result.status).json(result.error ? { error: result.error } : { ok: true });
+    } catch (err) {
+        serverError(res, err);
+    }
+});
+
+app.delete("/api/transcriptions/:id", requireAuth, async (req, res) => {
+    const id = jobId(req);
+    if (!id) return badRequest(res, "Invalid job id.");
+    try {
+        if (!(await deleteTranscription(id))) return res.status(404).json({ error: "Transcription not found." });
+        res.json({ message: "Deleted" });
+    } catch (err) {
+        serverError(res, err);
     }
 });
 

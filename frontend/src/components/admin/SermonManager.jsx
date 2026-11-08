@@ -6,6 +6,7 @@ import { createSermon } from "../../lib/sermons";
 import { formatDate, todayIso } from "../../lib/dates";
 import SpeakerAvatar from "../SpeakerAvatar";
 import SermonBody from "../SermonBody";
+import TranscribePanel from "./TranscribePanel";
 import {
   cardClass,
   sectionTitleClass,
@@ -76,6 +77,19 @@ export default function SermonManager({ sermons, onChanged, onError }) {
   return (
     <section className={cardClass}>
       <h2 className={sectionTitleClass}>Sermons Manager</h2>
+
+      <TranscribePanel
+        hasBody={Boolean(form.body.trim())}
+        onError={onError}
+        onLoad={({ title, date, text }) =>
+          setForm((current) => ({
+            ...current,
+            title: current.title || title.slice(0, 200),
+            date: date || current.date,
+            body: text.slice(0, 100000),
+          }))
+        }
+      />
 
       <form onSubmit={handleSubmit} className="mb-8 flex flex-col gap-4">
         <div className="grid gap-4 md:grid-cols-2">

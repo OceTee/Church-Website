@@ -1,0 +1,72 @@
+name: Transcribe sermon audio
+
+# Started by the API (POST /api/transcriptions) when an admin presses
+# "Transcribe" on the dashboard. Runs Whisper on GitHub's free runners and
+# reports the text back to the API as a draft. Only accounts with write
+# access to this repository (and the API's token) can start it.
+#
+# Needs one repository secret, TRANSCRIBE_CALLBACK_SECRET, with the same value
+# as the backend's environment variable of that name.
+
+on:
+  workflow_dispatch:
+    inputs:
+      job_id:
+        description: Transcription job id in the API database
+        required: true
+      audio_id:
+        description: Telegram post id of the recording
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: transcribe-${{ inputs.job_id }}
+  cancel-in-progress: false
+
+jobs:
+  transcribe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    env:
+      API_BASE: ${{ vars.TRANSCRIBE_API_BASE || 'https://church-website-api.vercel.app/api' }}
+      JOB_ID: ${{ inputs.job_id }}
+      AUDIO_ID: ${{ inputs.audio_id }}
+      CALLBACK_SECRET: ${{ secrets.TRANSCRIBE_CALLBACK_SECRET }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      WHISPER_MODEL: large-v3-turbo
+    steps:
+      - name: Check inputs
+        run: |
+          [[ "$JOB_ID" =~ ^[0-9]+$ && "$AUDIO_ID" =~ ^[0-9]+$ ]] || { echo "job_id and audio_id must be numbers"; exit 1; }
+          [ -n "$CALLBACK_SECRET" ] || { echo "The TRANSCRIBE_CALLBACK_SECRET repository secret is not set"; exit 1; }
+
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: transcriber
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: transcriber/requirements.txt
+
+      - run: pip install -r transcriber/requirements.txt
+
+      # Keeps the ~1.6 GB model between runs so it is not downloaded each time.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: whisper-${{ env.WHISPER_MODEL }}
+
+      - name: Transcribe
+        run: python transcriber/transcribe.py
+
+      # If the runner is cancelled or times out, the script cannot report it.
+      - name: Report cancellation
+        if: cancelled()
+        run: |
+          curl -s -X POST "$API_BASE/transcriptions/$JOB_ID/report" \
+            -H "Content-Type: application/json" -H "X-Transcribe-Secret: $CALLBACK_SECRET" \
+            -d '{"status":"failed","error":"The GitHub job was cancelled or ran out of time."}' || true

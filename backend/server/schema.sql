@@ -54,6 +54,23 @@ CREATE TABLE IF NOT EXISTS app_meta (
     value TEXT
 );
 
+-- Sermon transcription jobs run on GitHub Actions; see transcriptions.js.
+-- status: queued -> running -> done | failed. `text` is the draft transcript.
+CREATE TABLE IF NOT EXISTS transcriptions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    audioId INTEGER NOT NULL,
+    title TEXT,
+    date TEXT,
+    status TEXT NOT NULL DEFAULT 'queued',
+    progress REAL,
+    audioSeconds REAL,
+    text TEXT,
+    error TEXT,
+    runUrl TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Single admin identity. The password is stored as a scrypt hash + salt, never
 -- as plaintext, and `passwordVersion` is bumped on every change so that all
 -- previously issued session tokens are invalidated.
