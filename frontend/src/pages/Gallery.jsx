@@ -2,9 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Maximize2 } from "lucide-react";
 import Header from "../components/Header";
 import ImageLightbox from "../components/ImageLightbox";
-import { apiJson, assetUrl } from "../lib/api";
+import { apiJson } from "../lib/api";
 import { formatDate, isIsoDate } from "../lib/dates";
-import { site } from "../config/site";
 
 function monthForPhoto(photo) {
   if (isIsoDate(photo.date)) {
@@ -16,21 +15,6 @@ function monthForPhoto(photo) {
     });
     return { key, label };
   }
-
-  // A few early gallery entries used a free-text month such as "June 2026".
-  const legacyMonth = /^(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})$/i.exec(
-    photo.date || ""
-  );
-  if (legacyMonth) {
-    const date = new Date(`${legacyMonth[1]} 1, ${legacyMonth[2]}`);
-    if (!Number.isNaN(date.getTime())) {
-      return {
-        key: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`,
-        label: date.toLocaleDateString("en-GB", { month: "long", year: "numeric" }),
-      };
-    }
-  }
-
   return { key: "older", label: "Earlier photos" };
 }
 
@@ -58,39 +42,54 @@ export default function Gallery() {
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
+  const [nextBefore, setNextBefore] = useState(null);
+  const [channelUrl, setChannelUrl] = useState("");
+  const [loadingMore, setLoadingMore] = useState(false);
   const [activeIndex, setActiveIndex] = useState(null);
   const groupedPhotos = useMemo(() => groupPhotosByMonthAndDate(photos), [photos]);
-  const telegramLinks = site.socials.filter(({ href }) => /^https:\/\/t\.me\//i.test(href));
+
+  // Photos come from the church's Telegram media channel, newest first. Each
+  // call returns a page plus the cursor for the next, older page.
+  const loadPage = useCallback(async (before) => {
+    const data = await apiJson(`/telegram/gallery${before ? `?before=${before}` : ""}`);
+    const page = (data.photos || []).map((photo) => ({
+      ...photo,
+      fullUrl: photo.imageUrl,
+      label: formatDate(photo.date, { weekday: false }), // "12 Oct 2026"
+    }));
+    setPhotos((current) => {
+      const seen = new Set(current.map((photo) => photo.id));
+      return [...current, ...page.filter((photo) => !seen.has(photo.id))];
+    });
+    setNextBefore(data.nextBefore || null);
+    setChannelUrl(data.channelUrl || "");
+  }, []);
 
   useEffect(() => {
     let active = true;
-
-    const loadPhotos = async () => {
-      try {
-        const data = await apiJson("/gallery");
-        if (active) {
-          setPhotos(
-            (Array.isArray(data) ? data : []).map((photo) => ({
-              ...photo,
-              fullUrl: assetUrl(photo.imageUrl),
-              // "12 Oct 2026"; older free-text dates are shown as typed.
-              label: formatDate(photo.date, { weekday: false }),
-            }))
-          );
-        }
-      } catch (error) {
+    loadPage()
+      .catch((error) => {
         console.error("Failed to fetch gallery:", error);
         if (active) setFailed(true);
-      } finally {
+      })
+      .finally(() => {
         if (active) setLoading(false);
-      }
-    };
-
-    loadPhotos();
+      });
     return () => {
       active = false;
     };
-  }, []);
+  }, [loadPage]);
+
+  const loadMore = async () => {
+    setLoadingMore(true);
+    try {
+      await loadPage(nextBefore);
+    } catch (error) {
+      console.error("Failed to fetch older photos:", error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const close = useCallback(() => setActiveIndex(null), []);
 
@@ -112,24 +111,22 @@ export default function Gallery() {
           sub="Moments from our services, events, and life together as a church family."
         />
 
-        <aside className="rounded-2xl border border-[#65007f]/15 bg-white p-5 shadow-sm">
-          <p className="font-nunito text-base text-gray-700">
-            Looking for older photos? Visit our Telegram channels.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
-            {telegramLinks.map(({ label, href }) => (
+        {channelUrl && (
+          <aside className="rounded-2xl border border-[#65007f]/15 bg-white p-5 shadow-sm">
+            <p className="font-nunito text-base text-gray-700">
+              These photos come straight from our Telegram media channel.{" "}
               <a
-                key={href}
-                href={href}
+                href={channelUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-nunito text-sm font-semibold text-[#65007f] underline underline-offset-4 hover:text-[#330040]"
+                className="font-semibold text-[#65007f] underline underline-offset-4 hover:text-[#330040]"
               >
-                {label}
-              </a>
-            ))}
-          </div>
-        </aside>
+                Follow it on Telegram
+              </a>{" "}
+              for videos and the latest uploads.
+            </p>
+          </aside>
+        )}
 
         {loading ? (
           <p className="font-nunito text-gray-500">Loading gallery...</p>
@@ -194,6 +191,17 @@ export default function Gallery() {
                 </div>
               </section>
             ))}
+
+            {nextBefore && (
+              <button
+                type="button"
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="self-center rounded-full border border-[#65007f] px-5 py-2 font-nunito text-sm font-semibold text-[#65007f] transition hover:bg-[#65007f] hover:text-white disabled:opacity-60"
+              >
+                {loadingMore ? "Loading..." : "Load older photos"}
+              </button>
+            )}
           </div>
         )}
       </div>

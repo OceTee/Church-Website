@@ -9,9 +9,9 @@ This project is a modern, fully responsive church website paired with a custom-b
 Instead of using a generic website builder, I developed a bespoke full-stack solution tailored specifically to the church's needs:
 
 *   **Dynamic Admin Dashboard:** A secure, hidden portal where administrators can effortlessly update the website's content in real-time.
-*   **Sermons Manager:** Staff publish written sermons with a title, the speaker's name and photo, and the full text (with simple formatting for section headings and scripture quotations). Visitors browse a list of sermon cards and open each one to read it in full.
+*   **Sermons Manager:** Staff publish written sermons with a title, the speaker's name and photo, and the full text (with simple formatting for section headings and scripture quotations). Visitors browse a list of sermon cards and open each one to read it in full. Below them, audio messages from the church's Telegram channel stream straight on the page, however long the recording.
 *   **Events Calendar:** A streamlined scheduling system. New events automatically appear on the landing page complete with dates, times, and optional flyer images, and drop off the public pages once their date has passed.
-*   **Live Gallery:** A cloud-synced photo gallery that updates instantly when new pictures are uploaded via the admin portal.
+*   **Live Gallery:** Photos are pulled automatically from the church's Telegram media channel, so anything posted there shows on the site within minutes.
 *   **Direct-to-Inbox Contact Form:** A reliable messaging system that bypasses third-party email services, routing visitor inquiries securely and directly to the church's inbox.
 
 ## 🎨 Design Philosophy

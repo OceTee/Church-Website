@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Header from "../components/Header";
 import SermonCard from "../components/SermonCard";
+import AudioMessages from "../components/AudioMessages";
 import { fetchSermons } from "../lib/sermons";
 
 export default function Sermons() {
@@ -34,7 +35,7 @@ export default function Sermons() {
       <div className="flex w-full max-w-5xl flex-col gap-[2.618rem]">
         <Header
           main="Sermons"
-          sub="Read and reflect on the messages preached at our services."
+          sub="Read, listen to and reflect on the messages preached at our services."
         />
 
         {loading ? (
@@ -56,6 +57,8 @@ export default function Sermons() {
             ))}
           </ul>
         )}
+
+        <AudioMessages />
       </div>
     </div>
   );

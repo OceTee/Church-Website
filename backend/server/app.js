@@ -34,6 +34,14 @@ import {
     handleUploadError,
 } from "./uploads.js";
 import { rateLimit } from "./rateLimit.js";
+import {
+    listGalleryPhotos,
+    listAudioMessages,
+    getAudioFile,
+    streamAudioRange,
+    isStreamingConfigured,
+    STREAM_CHUNK_BYTES,
+} from "./telegram.js";
 import nodemailer from "nodemailer";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -573,6 +581,106 @@ async function insertGalleryWithRecovery(imageUrl, date) {
         }
     }
 }
+
+// --- TELEGRAM CHANNELS (public gallery photos and sermon audio) ---
+
+function beforeCursor(req) {
+    const before = Number(req.query.before);
+    return Number.isInteger(before) && before > 0 ? before : undefined;
+}
+
+app.get("/api/telegram/gallery", async (req, res) => {
+    try {
+        res.setHeader("Cache-Control", "public, max-age=300, s-maxage=600");
+        res.json(await listGalleryPhotos(beforeCursor(req)));
+    } catch (err) {
+        console.error("[telegram] Gallery fetch failed:", err);
+        res.status(502).json({ error: "The Telegram gallery could not be loaded just now." });
+    }
+});
+
+app.get("/api/telegram/audio", async (req, res) => {
+    try {
+        res.setHeader("Cache-Control", "public, max-age=300, s-maxage=600");
+        res.json(await listAudioMessages(beforeCursor(req)));
+    } catch (err) {
+        console.error("[telegram] Audio list failed:", err);
+        res.status(502).json({ error: "The audio messages could not be loaded just now." });
+    }
+});
+
+// Serves one byte range of a Telegram audio post. Always answers 206 with at
+// most STREAM_CHUNK_BYTES, which audio elements handle by requesting the
+// next range, so long recordings play without the whole file being fetched.
+app.get("/api/telegram/audio/:id/stream", async (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return badRequest(res, "Invalid audio id.");
+    if (!isStreamingConfigured()) {
+        return res.status(503).json({ error: "Audio streaming is not set up on this server." });
+    }
+
+    let file;
+    try {
+        file = await getAudioFile(id);
+    } catch (err) {
+        console.error("[telegram] Audio lookup failed:", err);
+        return res.status(502).json({ error: "The audio could not be loaded just now." });
+    }
+    if (!file) return res.status(404).json({ error: "Audio not found." });
+
+    const { size, mimeType } = file;
+    const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || "");
+    let start = 0;
+    let end = size - 1;
+    if (range) {
+        if (range[1] === "" && range[2] !== "") {
+            start = Math.max(size - Number(range[2]), 0); // suffix: last N bytes
+        } else {
+            start = Number(range[1] || 0);
+            if (range[2] !== "") end = Math.min(Number(range[2]), size - 1);
+        }
+    }
+    if (start >= size || start > end) {
+        res.setHeader("Content-Range", `bytes */${size}`);
+        return res.status(416).end();
+    }
+    end = Math.min(end, start + STREAM_CHUNK_BYTES - 1);
+
+    res.status(206);
+    res.setHeader("Accept-Ranges", "bytes");
+    res.setHeader("Content-Type", mimeType);
+    res.setHeader("Content-Length", String(end - start + 1));
+    res.setHeader("Content-Range", `bytes ${start}-${end}/${size}`);
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    if (req.method === "HEAD") return res.end();
+
+    const aborted = new AbortController();
+    res.on("close", () => aborted.abort());
+    try {
+        await streamAudioRange(
+            id,
+            start,
+            end,
+            (chunk) =>
+                new Promise((resolve) => {
+                    if (res.destroyed || res.write(chunk)) return resolve();
+                    const done = () => {
+                        res.off("drain", done);
+                        res.off("close", done);
+                        resolve();
+                    };
+                    res.once("drain", done);
+                    res.once("close", done);
+                }),
+            aborted.signal
+        );
+        res.end();
+    } catch (err) {
+        console.error(`[telegram] Streaming audio ${id} failed:`, err);
+        // Headers are already sent; cutting the response tells the player to retry.
+        res.destroy(err);
+    }
+});
 
 app.get("/api/gallery", async (req, res) => {
     try {
