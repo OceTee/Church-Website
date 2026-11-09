@@ -61,7 +61,7 @@ def report(**fields):
     if os.environ.get("LOCAL_ONLY"):
         return
     url = f"{env('API_BASE')}/transcriptions/{env('JOB_ID')}/report"
-    http("POST", url, fields, {"X-Transcribe-Secret": env("CALLBACK_SECRET")})
+    http("POST", url, fields, {"X-Transcribe-Secret": env("CALLBACK_SECRET").strip()})
 
 
 def download(audio_id, path):
@@ -157,6 +157,9 @@ def main():
         print("Draft sent to the API.", flush=True)
     except Exception as error:
         traceback.print_exc()
+        if isinstance(error, urllib.error.HTTPError) and error.code == 401:
+            print("The API rejected TRANSCRIBE_CALLBACK_SECRET: the repository secret and the "
+                  "backend's environment variable must hold exactly the same value.", flush=True)
         try:
             report(status="failed", error=str(error)[:500])
         finally:

@@ -28,9 +28,11 @@ export function isTranscriptionConfigured() {
 
 /** Constant-time check of the secret the workflow sends with each report. */
 export function isValidCallbackSecret(given) {
-    const expected = process.env.TRANSCRIBE_CALLBACK_SECRET || "";
+    // Trimmed on both sides: a space or newline picked up when pasting the
+    // value into Vercel or GitHub would otherwise make every report fail.
+    const expected = (process.env.TRANSCRIBE_CALLBACK_SECRET || "").trim();
     if (!expected || typeof given !== "string") return false;
-    const a = crypto.createHash("sha256").update(given).digest();
+    const a = crypto.createHash("sha256").update(given.trim()).digest();
     const b = crypto.createHash("sha256").update(expected).digest();
     return crypto.timingSafeEqual(a, b);
 }
