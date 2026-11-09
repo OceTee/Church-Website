@@ -1,1 +1,4 @@
 faster-whisper==1.2.1
+# faster-whisper 1.2.1 calls av.open(..., metadata_errors=...), which PyAV 19
+# removed. 18.1.0 is the version the transcriber was tested with.
+av==18.1.0
